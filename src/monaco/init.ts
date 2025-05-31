@@ -71,11 +71,13 @@ export async function initializeMonacoEditor() {
     registerPublishDiagnostic()
 
     leftEditor.setModel(monaco.editor.createModel(initialComponentCode, "qingkuai", monaco.Uri.file("/App.qk")))
-    fileInfos.set("App.qk", {
-        model: leftEditor.getModel()!,
-        ...defaultRuntimeCompileResult
-    })
+    fileInfos.set("App.qk", { model: leftEditor.getModel()!, ...defaultRuntimeCompileResult })
     refreshCompiledCode(true)
+
+    const removeEditListener = leftEditor.onDidChangeModelContent(() => {
+        setState({ hasBeenEdited: true })
+        removeEditListener.dispose()
+    })
 }
 
 export async function refreshCompiledCode(rerender: boolean) {

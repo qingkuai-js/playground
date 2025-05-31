@@ -7,16 +7,15 @@ import * as monaco from "monaco-editor-core"
 import { Handlers } from "../../util/constants"
 import { convertHover } from "./convertor/hover"
 import { leftEditor, store } from "../../util/state"
+import { isExternalFileName } from "../../util/assert"
 import { convertLocations } from "./convertor/location"
+import LanguageWorker from "../../worker/handelr?worker"
 import { convertDiagnostic } from "./convertor/diagnostic"
 import { qingkuaiLanguageService } from "../../util/loadpkg"
-import LanguageWorker from "../../worker/handelr?worker&inline"
 import { convertCodeLens, convertCodeLensList } from "./convertor/code-lens"
 import { convertCompletionItem, convertCompletions } from "./convertor/completion"
 import { convertColorPresentations, convertDocumentColors } from "./convertor/color"
 import { convertRange, convertTextEdit, convertWorkspaceEdit } from "./convertor/struct"
-import { isExternalFileName } from "../../util/assert"
-import { fileUriToPath } from "../../util/sundary"
 
 export default class {
     private reqid = 0

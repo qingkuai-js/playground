@@ -5,7 +5,9 @@ import type { FileInfo, SetStateOptions } from "../types/common"
 
 import { createStore } from "qingkuai"
 import { defaultMessage } from "./constants"
+import { isUndefined } from "./assert"
 
+export let hasBeenEdited = false
 export let worker: LanguageWorker
 export let iframe: HTMLIFrameElement
 export let leftEditor: Monaco.editor.IStandaloneCodeEditor
@@ -48,5 +50,8 @@ export function setState(options: SetStateOptions) {
     }
     if (options.languageWorker) {
         worker = options.languageWorker
+    }
+    if (!isUndefined(options.hasBeenEdited)) {
+        hasBeenEdited = options.hasBeenEdited
     }
 }

@@ -2,8 +2,8 @@ import type Monaco from "monaco-editor-core"
 import type { Color } from "vscode-languageserver-types"
 import type { MessageBoxProps } from "../types/component"
 import type { InsertSnippetParam } from "qingkuai-language-service"
-import type { MonacoCodeLensItemWithOriginal, MonacoCompletionItemWithOriginal } from "../types/monaco"
 import type { Model, WorkerHandlerBaseParam } from "../types/communication"
+import type { MonacoCodeLensItemWithOriginal, MonacoCompletionItemWithOriginal } from "../types/monaco"
 
 import {
     fsMap,

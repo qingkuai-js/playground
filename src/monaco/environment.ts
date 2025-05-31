@@ -1,9 +1,9 @@
 import type { ShowReferencesCommandParams } from "qingkuai-language-service"
 
 import * as monaco from "monaco-editor-core"
-import EditorWoker from "monaco-editor-core/esm/vs/editor/editor.worker?worker"
+import { hasBeenEdited, leftEditor } from "../util/state"
 import { convertLocations } from "./languages/convertor/location"
-import { leftEditor } from "../util/state"
+import EditorWoker from "monaco-editor-core/esm/vs/editor/editor.worker?worker"
 
 self.MonacoEnvironment = {
     getWorker: () => new EditorWoker()
@@ -14,6 +14,14 @@ window.addEventListener("unhandledrejection", event => {
     if ((reason && reason.name === "Canceled") || reason.message?.includes("Canceled")) {
         event.preventDefault()
     }
+})
+
+window.addEventListener("beforeunload", function (e) {
+    !import.meta.env.DEV && hasBeenEdited && e.preventDefault()
+})
+
+window.addEventListener("keydown", function (e) {
+    ;(e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s" && e.preventDefault()
 })
 
 monaco.editor.registerCommand("_typescript.applyCompletionCodeAction", () => {})

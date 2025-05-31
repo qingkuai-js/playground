@@ -6,13 +6,16 @@ import qingkuai from "vite-plugin-qingkuai"
 import { defineConfig, transformWithEsbuild } from "vite"
 
 export default defineConfig({
-    plugins: [qingkuai(), transpileServiceWorker()],
+    worker: {
+        format: "es"
+    },
     css: {
         devSourcemap: true
     },
     resolve: {
         dedupe: ["vscode-languageserver-types"]
-    }
+    },
+    plugins: [qingkuai(), transpileServiceWorker()]
 })
 
 function transpileServiceWorker(): Plugin {

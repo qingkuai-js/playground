@@ -27,6 +27,7 @@ export type PromiseWithState<T = any> = Promise<T> & {
 }
 
 export type SetStateOptions = Partial<{
+    hasBeenEdited: boolean
     iframe: HTMLIFrameElement
     languageWorker: LanguageWorker
     leftEditor: Monaco.editor.IStandaloneCodeEditor
