@@ -1,0 +1,13 @@
+diff --git a/dist/vfs.esm.js b/dist/vfs.esm.js
+index 62d51f93dbb2749c8f310f97a09ccce7baeec821..5fa44ae1eaec3d9499d513af4c1b42d79b155708 100644
+--- a/dist/vfs.esm.js
++++ b/dist/vfs.esm.js
+@@ -201,7 +201,7 @@ var createDefaultMapFromCDN = function createDefaultMapFromCDN(options, version,
+   var fetchlike = fetcher || fetch;
+   var fsMap = new Map();
+   var files = knownLibFilesForCompilerOptions(options, ts);
+-  var prefix = "https://playgroundcdn.typescriptlang.org/cdn/" + version + "/typescript/lib/";
++  var prefix = "https://cdn.jsdelivr.net/npm/typescript@"+version+"/lib/"
+   function zip(str) {
+     return lzstring ? lzstring.compressToUTF16(str) : str;
+   }

@@ -1,0 +1,133 @@
+<lang-ts>
+    import { onAfterDestroy } from "qingkuai"
+    import { store, worker } from "../util/state"
+    import { refreshCompiledCode } from "../monaco/init"
+    import { qingkuaiVersionsPms, tsVersionsPms } from "../util/constants"
+
+    interface Props {
+        package: "typescript" | "qingkuai"
+    }
+
+    let isLoading = false
+    let showVersionList = false
+    let mainDom!: HTMLDivElement
+    let candidateVersions: string[] = []
+    const formatedPkgName = props.package[0].toUpperCase() + props.package.slice(1)
+    const currentVersion = der(store[props.package === "qingkuai" ? "qingkuaiVersion" : "tsVersion"])
+
+    function handleSelectVersion(version: string) {
+        if (props.package === "typescript") {
+            store.tsVersion = version
+        } else {
+            store.qingkuaiVersion = version
+        }
+        store.resolving = true
+        worker.loadCore(store.tsVersion, store.qingkuaiVersion).then(() => {
+            store.resolving = false
+            refreshCompiledCode(true)
+        })
+    }
+
+    async function loadVersions() {
+        if (!showVersionList) {
+            isLoading = true
+        } else {
+            return (showVersionList = false), void 0
+        }
+        candidateVersions = await (props.package === "qingkuai" ? qingkuaiVersionsPms : tsVersionsPms)
+        showVersionList = !(isLoading = false)
+    }
+
+    const handleDocumentClick = (e: MouseEvent) => {
+        const target = e.target as HTMLDivElement
+        if (!mainDom.contains(target)) {
+            return (showVersionList = false)
+        }
+        loadVersions()
+    }
+    document.addEventListener("click", handleDocumentClick)
+    onAfterDestroy(() => {
+        document.removeEventListener("click", handleDocumentClick)
+    })
+</lang-ts>
+
+<div
+    class="version-selector"
+    &dom={mainDom}
+>
+    <span>{formatedPkgName} {currentVersion}</span>
+    <i
+        class="iconfont"
+        !class={`icon-${isLoading ? "loading" : "arrow"}`}
+    ></i>
+    <ul
+        class="selection-box"
+        #show={showVersionList}
+    >
+        <li
+            #for={item of candidateVersions}
+            @click={handleSelectVersion(item)}
+        >
+            {item}
+        </li>
+    </ul>
+</div>
+
+<lang-scss>
+    .version-selector {
+        display: inline-block;
+        position: relative;
+        user-select: none;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        margin-left: 15px;
+        letter-spacing: 0.3px;
+        height: var(--top-bar-height);
+        color: var(--top-bar-font-color);
+        line-height: var(--top-bar-height);
+
+        .iconfont {
+            font-size: 14px;
+            margin-left: 5px;
+
+            &.icon-loading {
+                display: inline-block;
+                animation: loading 1200ms ease infinite;
+            }
+        }
+
+        .selection-box {
+            max-height: calc(100vh - 75px);
+            z-index: 1;
+            width: 100%;
+            overflow: hidden;
+            overflow-y: visible;
+            position: absolute;
+            border-radius: 3px;
+            background-color: #333;
+            top: var(--top-bar-height);
+
+            li {
+                cursor: pointer;
+                list-style: none;
+                font-size: 13px;
+                height: 20px;
+                line-height: 20px;
+                padding: 6px 10px;
+
+                &:hover {
+                    background-color: #444;
+                }
+            }
+
+            &.active {
+                box-shadow: 0 0 3px #555;
+            }
+        }
+
+        &:hover {
+            color: var(--top-bar-active-font-color);
+        }
+    }
+</lang-scss>

@@ -1,0 +1,20 @@
+@keyframes glitter {
+    from {
+        left: -70px;
+    }
+    18% {
+        left: 200px;
+    }
+    to {
+        left: 200px;
+    }
+}
+
+@keyframes loading {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

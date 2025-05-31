@@ -1,0 +1,27 @@
+* {
+    margin: 0;
+    padding: 0;
+
+    --top-bar-height: 40px;
+    --left-editor-width: 58%;
+    --right-editor-width: 42%;
+
+    --main-color: #2296f3;
+    --error-color: #ff0127;
+    --warning-color: #ffa400;
+    --error-color-bg: #ff002613;
+    --warning-color-bg: #ffa6000e;
+    --top-bar-font-color: #aaa;
+    --file-active-color: #f9e575;
+    --top-bar-active-font-color: #ddd;
+}
+
+html {
+    overflow: hidden;
+    background-color: #111;
+    font-family: "Menlo, Monaco, 'Courier New', monospace";
+}
+
+button {
+    border: none;
+}

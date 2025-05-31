@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "target": "ESNext",
+        "module": "ESNext",
+        "esModuleInterop": true,
+        "skipDefaultLibCheck": true,
+        "moduleResolution": "bundler",
+        "forceConsistentCasingInFileNames": true,
+        "types": ["vite/client"]
+    },
+    "include": ["src", "env.d.ts"],
+    "exclude": ["src/worker/dts"]
+}

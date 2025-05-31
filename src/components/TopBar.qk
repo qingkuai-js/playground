@@ -1,0 +1,104 @@
+<lang-ts>
+    import Switch from "./Switch"
+    import logo from "../assets/logo.png"
+    import VersionSelector from "./VersionSelector"
+    import { store, leftEditor } from "../util/state"
+    import { refreshCompiledCode } from "../monaco/init"
+
+    function reloadCodeLens() {
+        const currentModel = leftEditor.getModel()!
+        currentModel.setValue(currentModel.getValue())
+    }
+
+    function handleChangeCompileOptions(key: "comment" | "debug", value: boolean) {
+        ;(store[key] = value), refreshCompiledCode(false)
+    }
+</lang-ts>
+
+<div class="top-bar">
+    <div class="left">
+        <img !src={logo} />
+        <span>QingKuai Playground</span>
+    </div>
+    <div class="right">
+        <Switch
+            label="code lens"
+            @change={reloadCodeLens}
+            &checked={store.codeLens}
+        />
+        <Switch
+            label="debug"
+            &checked={store.debug}
+            @change={v => handleChangeCompileOptions("debug", v)}
+        />
+        <Switch
+            label="comment"
+            &checked={store.comment}
+            @change={v => handleChangeCompileOptions("comment", v)}
+        />
+        <VersionSelector package="typescript" />
+        <VersionSelector package="qingkuai" />
+        <a href="https://github.com/qingkuai-js/qingkuai">
+            <i class="iconfont icon-github"></i>
+        </a>
+    </div>
+</div>
+
+<lang-scss>
+    .top-bar {
+        display: flex;
+        height: var(--top-bar-height);
+        background-color: #111;
+        justify-content: space-between;
+
+        .left {
+            display: flex;
+            margin-left: 10px;
+            align-items: center;
+
+            img {
+                width: 30px;
+                height: 30px;
+            }
+
+            span {
+                position: relative;
+                font-size: 14px;
+                font-weight: bold;
+                margin-left: 5px;
+                overflow: hidden;
+                letter-spacing: 0.5px;
+                color: var(--main-color);
+
+                &::before {
+                    content: "";
+                    position: absolute;
+                    display: block;
+                    width: 100px;
+                    height: 3px;
+                    filter: blur(4px);
+                    background-color: white;
+                    transform: rotateZ(-20deg);
+                    animation: glitter 8s ease-in-out infinite;
+                }
+            }
+        }
+
+        .right {
+            display: flex;
+            height: 40px;
+            margin-right: 20px;
+            align-items: center;
+
+            .iconfont {
+                font-size: 22px;
+                color: white;
+                margin-left: 20px;
+            }
+
+            a {
+                text-decoration: none;
+            }
+        }
+    }
+</lang-scss>

@@ -1,0 +1,95 @@
+<lang-ts>
+    interface Props {
+        label: string
+        defaultChecked?: boolean
+        change?: (checked: boolean) => void
+    }
+
+    interface Refs {
+        checked?: boolean
+    }
+
+    let checked = (refs.checked || props.defaultChecked) ?? false
+
+    function handleChange(e: Event) {
+        refs.checked = checked = (e.target as HTMLInputElement).checked
+        props.change?.(checked)
+    }
+</lang-ts>
+
+<div class="switch">
+    <span !class={{ active: checked }}>{props.label}</span>
+    <label class="outter">
+        <input
+            !checked
+            type="checkbox"
+            @change={handleChange}
+        />
+        <span class="inner"></span>
+    </label>
+</div>
+
+<lang-scss>
+    .switch {
+        display: flex;
+        height: 40px;
+        margin-left: 15px;
+        align-items: center;
+
+        span {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--top-bar-font-color);
+
+            &.active {
+                color: var(--top-bar-active-font-color);
+            }
+        }
+
+        .outter {
+            position: relative;
+            display: inline-block;
+            width: 30px;
+            height: 17px;
+            margin-left: 5px;
+
+            input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+
+                &:checked + .inner {
+                    background-color: var(--main-color);
+                }
+
+                &:checked + .inner::before {
+                    transform: translateX(13px);
+                }
+            }
+
+            .inner {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                transition: 0.4s;
+                border-radius: 17px;
+                background-color: #ccc;
+
+                &::before {
+                    position: absolute;
+                    content: "";
+                    height: 13px;
+                    width: 13px;
+                    left: 2px;
+                    bottom: 2px;
+                    background-color: white;
+                    transition: 0.2s;
+                    border-radius: 50%;
+                }
+            }
+        }
+    }
+</lang-scss>

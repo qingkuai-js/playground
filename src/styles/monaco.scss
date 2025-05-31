@@ -1,0 +1,25 @@
+.editors .left > .monaco-editor,
+.editors .right > .monaco-editor {
+    padding-top: 5px;
+}
+
+.monaco-editor .rename-box .rename-input {
+    color: white;
+}
+
+.monaco-tl-contents {
+    font-size: 13px;
+}
+
+.right .monaco-editor .cursor {
+    display: none !important;
+}
+
+.monaco-editor .monaco-editor-overlaymessage.below {
+    transform: scale(0.8) translate(-12.5%, -12.5%);
+}
+
+.monaco-editor-overlaymessage,
+.monaco-editor .suggest-widget > .message {
+    transform: scale(0.8) translate(-12.5%, -5%);
+}

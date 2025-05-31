@@ -1,0 +1,128 @@
+<lang-ts>
+    import { onAfterDestroy } from "qingkuai"
+    interface Props {
+        msg: string
+        confirm?: () => void
+        cancel?: () => void
+    }
+
+    interface Refs {
+        visible: boolean
+    }
+
+    function handleCancel() {
+        refs.visible = false
+        props.cancel?.()
+    }
+
+    function handleConfirm() {
+        refs.visible = false
+        props.confirm?.()
+    }
+
+    const documentKeyupEvent = (e: KeyboardEvent) => {
+        if (!refs.visible) {
+            return
+        }
+        if (e.key === "Escape") {
+            handleCancel()
+        } else if (e.key === "Enter") {
+            handleConfirm()
+        }
+    }
+    document.addEventListener("keyup", documentKeyupEvent)
+    onAfterDestroy(() => {
+        document.removeEventListener("keyup", documentKeyupEvent)
+    })
+</lang-ts>
+
+<div
+    tabindex="0"
+    class="modal-shadow"
+    #if={refs.visible}
+    #target={document.body}
+    @keyup|esc={handleCancel}
+>
+    <div class="modal">
+        <p class="title">Message</p>
+        <p class="info">{props.msg}</p>
+        <div class="button-box">
+            <button
+                class="cancel-btn"
+                @click={handleCancel}
+                >Cancel</button
+            >
+            <button
+                class="confirm-btn"
+                @click={handleConfirm}
+                >Confirm</button
+            >
+        </div>
+    </div>
+</div>
+
+<lang-scss>
+    .modal-shadow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        background-color: #11111149;
+    }
+    .modal {
+        position: absolute;
+        top: 100px;
+        z-index: 2;
+        width: 400px;
+        border-radius: 3px;
+        padding: 10px 15px;
+        left: calc(50% - 200px);
+        background-color: #444;
+        box-shadow: 0 0 10px #111;
+        color: var(--top-bar-font-color);
+
+        .title {
+            font-size: 15px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .info {
+            font-size: 14px;
+            margin-top: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        .button-box {
+            display: flex;
+            justify-content: flex-end;
+
+            button {
+                cursor: pointer;
+                border: none;
+                font-size: 13px;
+                font-weight: 500;
+                margin-top: 10px;
+                padding: 6px 12px;
+                margin-left: 15px;
+                border-radius: 3px;
+                letter-spacing: 0.5px;
+
+                &.cancel-btn {
+                    color: #222;
+                    background-color: #888;
+                }
+                &.confirm-btn {
+                    color: white;
+                    background-color: var(--main-color);
+                }
+
+                &:hover {
+                    opacity: 0.8;
+                }
+            }
+        }
+    }
+</lang-scss>

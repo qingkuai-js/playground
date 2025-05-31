@@ -1,0 +1,101 @@
+<lang-ts>
+    import TopBar from "./TopBar"
+    import MsgBox from "./MsgBox"
+    import FileTab from "./FileTab"
+    import { onAfterMount } from "qingkuai"
+    import { store, setState } from "../util/state"
+    import { initializeMonacoEditor } from "../monaco/init"
+
+    let iframe!: HTMLIFrameElement
+
+    onAfterMount(() => {
+        setState({ iframe })
+        initializeMonacoEditor()
+    })
+
+    const inPreview = der(store.rightFileTab.activeIndex === 0)
+    const editorOutterExtraClass = der(store.showingExternalSingleDefinition ? "hide-duplicate-definition" : "")
+</lang-ts>
+
+<TopBar />
+<MsgBox />
+<div
+    class="editors"
+    !class={editorOutterExtraClass}
+>
+    <div class="left">
+        <FileTab location="left" />
+    </div>
+    <div
+        class="right"
+        !class={{ "in-preview": inPreview }}
+    >
+        <FileTab location="right" />
+        <iframe
+            &dom={iframe}
+            #show={inPreview}
+            sandbox="allow-scripts allow-popups allow-forms allow-pointer-lock allow-modals allow-same-origin"
+        >
+            <h1>...</h1>
+        </iframe>
+    </div>
+</div>
+<p
+    #show={store.resolving}
+    class="service-loading"
+>
+    Resolving the qingkuai and typescript langauge service...
+</p>
+
+<lang-scss>
+    .editors {
+        display: flex;
+        width: 100vw;
+        justify-content: space-between;
+        height: calc(100vh - var(--top-bar-height));
+
+        .left,
+        .right {
+            height: 100%;
+            border: 1px solid #111;
+        }
+        .left {
+            width: var(--left-editor-width);
+        }
+        .right {
+            width: var(--right-editor-width);
+            border-left: none;
+
+            &.in-preview[qk-scope] {
+                background-color: white;
+
+                .monaco-editor {
+                    display: none;
+                }
+            }
+
+            iframe {
+                width: 100%;
+                height: 100%;
+                border: none;
+            }
+        }
+
+        &.hide-duplicate-definition[qk-scope] .monaco-list-row + .monaco-list-row {
+            display: none;
+        }
+    }
+    .service-loading {
+        box-sizing: border-box;
+        width: calc(var(--right-editor-width) - 20px);
+        position: absolute;
+        right: 10px;
+        top: 80px;
+        color: #111;
+        font-size: 14px;
+        font-weight: bold;
+        padding: 5px 10px;
+        border-radius: 3px;
+        background-color: var(--warning-color);
+    }
+</lang-scss>

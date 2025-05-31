@@ -1,0 +1,39 @@
+{
+    "name": "qingkuai-playground",
+    "private": true,
+    "author": "mlgq",
+    "license": "MIT",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    },
+    "dependencies": {
+        "monaco-editor-core": "^0.52.2",
+        "qingkuai": "^1.0.46",
+        "semver": "^7.7.1"
+    },
+    "devDependencies": {
+        "@types/css-tree": "^2.3.10",
+        "@types/node": "^22.14.0",
+        "@types/semver": "^7.7.0",
+        "@typescript/vfs": "^1.6.1",
+        "monaco-editor-textmate": "^4.0.0",
+        "monaco-textmate": "^3.0.1",
+        "onigasm": "^2.2.5",
+        "prettier": "^3.5.3",
+        "prettier-plugin-qingkuai": "^1.0.24",
+        "qingkuai-language-service": "^1.0.6",
+        "sass-embedded": "^1.86.3",
+        "typescript": "^5.8.3",
+        "vite": "^6.2.5",
+        "vite-plugin-qingkuai": "^1.0.12",
+        "vscode-languageserver-textdocument": "^1.0.12",
+        "vscode-languageserver-types": "^3.17.5"
+    },
+    "pnpm": {
+        "patchedDependencies": {
+            "@typescript/vfs": "patches/@typescript__vfs.patch"
+        }
+    }
+}

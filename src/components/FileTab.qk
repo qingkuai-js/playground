@@ -1,0 +1,303 @@
+<lang-ts>
+    import Modal from "./Modal"
+    import { fileInfos, store, worker } from "../util/state"
+    import { getLanguageId, fileUriToPath } from "../util/sundary"
+    import { addModel, changeModel, refreshCompiledCode } from "../monaco/init"
+
+    interface Props {
+        location: "left" | "right"
+    }
+
+    let modalMsg = ""
+    let inputIndex = -1
+    let modalVisible = false
+    let originalFileName = ""
+    let waitForDeleteIndex = -1
+    const showButtons = props.location === "left"
+    const validFileNameRE = /^[^\/\\]+\.(?:qk|[jt]s)$/
+    const container = store[props.location === "left" ? "leftFileTab" : "rightFileTab"]
+
+    function handleAddTab() {
+        let newFileName = ""
+        for (let i = 0; true; i++) {
+            const fileName = `Component${i === 0 ? "" : i}.qk`
+            if (!container.tabs.includes(fileName)) {
+                newFileName = fileName
+                break
+            }
+        }
+        container.activeIndex = container.tabs.push(newFileName) - 1
+        addModel(getLanguageId(newFileName), newFileName)
+    }
+
+    function showInput(this: HTMLSpanElement, index: number) {
+        if (props.location === "left" && index) {
+            const input = this.parentElement!.childNodes[1] as HTMLInputElement
+            originalFileName = container.tabs[(inputIndex = index)]
+            setTimeout(input.select.bind(input))
+        }
+    }
+
+    function handleChangeActiveModel(index: number) {
+        if (container.activeIndex === index) {
+            return
+        }
+        if (props.location === "right") {
+            refreshCompiledCode(false)
+            container.activeIndex = index
+        } else {
+            changeModel(container.tabs[(container.activeIndex = index)])
+        }
+    }
+
+    function handleDelete(index: number) {
+        modalMsg = `Are you sure to delete ${container.tabs[index]}?`
+        waitForDeleteIndex = index
+        modalVisible = true
+    }
+
+    function handleConfirmDelete() {
+        const fileName = container.tabs[waitForDeleteIndex]
+        const model = fileInfos.get(fileName)!.model
+        worker.deleteFile(fileUriToPath(model.uri.toString()))
+        handleChangeActiveModel(container.activeIndex - 1)
+        container.tabs.splice(waitForDeleteIndex, 1)
+        fileInfos.delete(fileName)
+        model.dispose()
+    }
+
+    function handleConfirmRename(this: HTMLInputElement) {
+        const resetFileName = (msg: string) => {
+            store.message.left = {
+                type: "error",
+                value: `${msg}, please consider replacing one.`
+            }
+            container.tabs[inputIndex] = originalFileName
+        }
+        setTimeout(() => {
+            if (inputIndex !== -1) {
+                if (this.value === originalFileName) {
+                    return
+                }
+                if (fileInfos.has(this.value)) {
+                    return resetFileName("Threr is already a file with the same name")
+                }
+                if (!validFileNameRE.test(this.value)) {
+                    return resetFileName(
+                        `The file name in playground must satisfies the regular expression: /${validFileNameRE.source}/`
+                    )
+                }
+
+                const newModel = addModel(getLanguageId(this.value), this.value)
+                const oldModel = fileInfos.get(originalFileName)!.model
+                worker.deleteFile(fileUriToPath(oldModel.uri.toString()))
+                newModel.setValue(oldModel.getValue())
+                fileInfos.delete(originalFileName)
+                changeModel(this.value)
+                oldModel.dispose()
+            }
+            inputIndex = -1
+        })
+    }
+</lang-ts>
+
+<div class="file-tab">
+    <div
+        class="item"
+        #for={item, index of container.tabs}
+        @click={handleChangeActiveModel(index)}
+        !class={index === container.activeIndex ? "active" : ""}
+        !style={showButtons && index !== 0 ? "" : "padding: 0 20px;"}
+    >
+        <i
+            class="iconfont"
+            #if={showButtons}
+            !class={`icon-${item.slice(-2)}`}
+        ></i>
+        <p !class={{ typing: inputIndex === index }}>
+            <span @dblclick={showInput(index)}> {container.tabs[index]} </span>
+            <input
+                type="text"
+                spellcheck="false"
+                @blur={handleConfirmRename}
+                &value={container.tabs[index]}
+                @keyup|enter={handleConfirmRename}
+            />
+        </p>
+        <button
+            class="delete-btn"
+            #if={showButtons && index !== 0}
+            @click|stop={handleDelete(index)}
+        >
+            <i class="iconfont icon-close"></i>
+        </button>
+    </div>
+    <button
+        class="add-btn"
+        #if={showButtons}
+        @click={handleAddTab}
+    >
+        <i class="iconfont icon-add"></i>
+    </button>
+    <Modal
+        !msg={modalMsg}
+        &visible={modalVisible}
+        @confirm={handleConfirmDelete}
+    />
+</div>
+
+<lang-scss>
+    .file-tab {
+        display: flex;
+        width: 100%;
+        overflow: hidden;
+        align-items: center;
+        border-bottom: none;
+        overflow-x: visible;
+        border: 1px solid #444;
+        background-color: #111;
+
+        .item {
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            height: 30px;
+            color: #999;
+            font-size: 12px;
+            line-height: 22px;
+            letter-spacing: 0.3px;
+            padding: 0 3px 0 10px;
+
+            &::after {
+                visibility: hidden;
+                content: "";
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+                height: 1px;
+            }
+
+            &.active {
+                color: var(--file-active-color);
+
+                &::after {
+                    visibility: visible;
+                    background-color: var(--file-active-color);
+                }
+            }
+
+            .iconfont:not(.icon-close) {
+                font-size: 13px;
+                margin-right: 5px;
+
+                &.icon-js {
+                    color: #fce566;
+                }
+                &.icon-ts {
+                    color: #5ad4e6;
+                    transform: scale(0.9);
+                }
+                &.icon-qk {
+                    color: var(--main-color);
+                    transform: scale(1.12) translateY(-1px);
+                }
+            }
+
+            .delete-btn {
+                cursor: pointer;
+                width: 18px;
+                height: 18px;
+                margin-left: 6px;
+                line-height: 18px;
+                text-align: center;
+                visibility: hidden;
+                border-radius: 3px;
+                background-color: inherit;
+
+                &:hover {
+                    background-color: #222;
+                }
+
+                .icon-close {
+                    color: white;
+                    font-size: 15px;
+                }
+            }
+
+            p {
+                position: relative;
+                font-weight: 500;
+
+                span {
+                    letter-spacing: 0;
+                }
+
+                input {
+                    position: absolute;
+                    z-index: 1;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: auto;
+                    border: none;
+                    font: inherit;
+                    outline: none;
+                    color: inherit;
+                    visibility: hidden;
+                    line-height: inherit;
+                    background: transparent;
+                    box-sizing: content-box;
+                    vertical-align: baseline;
+                }
+
+                &.typing {
+                    span {
+                        visibility: hidden;
+                    }
+
+                    input {
+                        visibility: visible;
+                    }
+                }
+            }
+
+            &:hover {
+                .delete-btn {
+                    visibility: visible;
+                }
+
+                &:not(.active) span {
+                    color: white;
+                }
+
+                &:not(.active)::after {
+                    visibility: visible;
+                    background-color: #999;
+                }
+            }
+        }
+
+        .add-btn {
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            padding: 0;
+            line-height: 20px;
+            border-radius: 3px;
+            text-align: center;
+            margin: 0 20px 0 5px;
+            background-color: inherit;
+
+            &:hover {
+                background: #222;
+            }
+
+            .icon-add {
+                font-size: 12px;
+                color: #999;
+            }
+        }
+    }
+</lang-scss>

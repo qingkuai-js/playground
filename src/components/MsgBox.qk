@@ -1,0 +1,78 @@
+<lang-ts>
+    import { store } from "../util/state"
+</lang-ts>
+
+<div
+    class="message-box left"
+    !class={store.message.left.type}
+    #show={store.message.left.value}
+    #target={document.body}
+>
+    {store.message.left.value}
+</div>
+<div
+    class="message-box right"
+    !class={
+        {
+            [store.message.right.type]: true,
+            light: store.rightFileTab.activeIndex === 0
+        }
+    }
+    #show={store.message.right.value}
+    #target={document.body}
+>
+    {store.message.right.value}
+</div>
+
+<lang-scss>
+    .message-box {
+        box-sizing: border-box;
+        position: absolute;
+        z-index: 1;
+        bottom: 10px;
+        font-size: 13px;
+        line-height: 1.6;
+        font-weight: bold;
+        border-radius: 5px;
+        white-space: pre-wrap;
+        letter-spacing: 0.3px;
+        padding: 8px 8px 12px;
+        font-family: monospace;
+
+        &.left {
+            left: 10px;
+            width: calc(var(--left-editor-width) - 20px);
+        }
+
+        &.right {
+            right: 10px;
+            width: calc(var(--right-editor-width) - 20px);
+        }
+
+        &.error {
+            color: var(--error-color);
+            border: 2px solid var(--error-color);
+            box-shadow: 0 0 8px var(--error-color);
+            background-color: var(--error-color-bg);
+
+            &.light {
+                color: white;
+                box-shadow: none;
+                background-color: var(--error-color);
+            }
+        }
+
+        &.warning {
+            color: var(--warning-color);
+            border: 2px solid var(--warning-color);
+            box-shadow: 0 0 8px var(--warning-color);
+            background-color: var(--warning-color-bg);
+
+            &.light {
+                color: white;
+                box-shadow: none;
+                background-color: var(--warning-color);
+            }
+        }
+    }
+</lang-scss>
