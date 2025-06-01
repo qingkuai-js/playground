@@ -1,5 +1,4 @@
 <lang-ts>
-    import { onAfterDestroy } from "qingkuai"
     import { store, worker } from "../util/state"
     import { refreshCompiledCode } from "../monaco/init"
     import { qingkuaiVersionsPms, tsVersionsPms } from "../util/constants"
@@ -22,6 +21,7 @@
             store.qingkuaiVersion = version
         }
         store.resolving = true
+        showVersionList = false
         worker.loadCore(store.tsVersion, store.qingkuaiVersion).then(() => {
             store.resolving = false
             refreshCompiledCode(true)
@@ -29,31 +29,23 @@
     }
 
     async function loadVersions() {
-        if (!showVersionList) {
-            isLoading = true
+        const mask = document.querySelector("body .mask")
+        mask && (mask as any).click()
+        isLoading = true
+
+        if (props.package !== "qingkuai") {
+            candidateVersions = await tsVersionsPms
         } else {
-            return (showVersionList = false), void 0
+            candidateVersions = await qingkuaiVersionsPms
         }
-        candidateVersions = await (props.package === "qingkuai" ? qingkuaiVersionsPms : tsVersionsPms)
         showVersionList = !(isLoading = false)
     }
-
-    const handleDocumentClick = (e: MouseEvent) => {
-        const target = e.target as HTMLDivElement
-        if (!mainDom.contains(target)) {
-            return (showVersionList = false)
-        }
-        loadVersions()
-    }
-    document.addEventListener("click", handleDocumentClick)
-    onAfterDestroy(() => {
-        document.removeEventListener("click", handleDocumentClick)
-    })
 </lang-ts>
 
 <div
     class="version-selector"
     &dom={mainDom}
+    @click={loadVersions}
 >
     <span>{formatedPkgName} {currentVersion}</span>
     <i
@@ -66,10 +58,16 @@
     >
         <li
             #for={item of candidateVersions}
-            @click={handleSelectVersion(item)}
+            @click|stop={handleSelectVersion(item)}
         >
             {item}
         </li>
+        <div
+            class="mask"
+            #if={showVersionList}
+            #target={document.body}
+            @click={showVersionList = false}
+        ></div>
     </ul>
 </div>
 
@@ -79,6 +77,7 @@
         position: relative;
         user-select: none;
         cursor: pointer;
+        z-index: 11;
         font-size: 13px;
         font-weight: 500;
         margin-left: 15px;
@@ -99,7 +98,7 @@
 
         .selection-box {
             max-height: calc(100vh - 75px);
-            z-index: 1;
+            z-index: 11;
             width: 100%;
             overflow: hidden;
             overflow-y: visible;
@@ -118,16 +117,13 @@
 
                 &:hover {
                     background-color: #444;
+                    color: var(--top-bar-active-font-color);
                 }
             }
 
             &.active {
                 box-shadow: 0 0 3px #555;
             }
-        }
-
-        &:hover {
-            color: var(--top-bar-active-font-color);
         }
     }
 </lang-scss>

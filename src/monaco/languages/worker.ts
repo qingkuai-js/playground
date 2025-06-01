@@ -136,6 +136,7 @@ function excuteClientHandler(data: any) {
             return (store.message.left = data), true
         }
         case Handlers.FileLoaded: {
+            monaco.editor.getModel(monaco.Uri.file(data.fileName))?.dispose()
             return monaco.editor.createModel(data.content, "typescript", monaco.Uri.file(data.fileName))
         }
         case Handlers.insertSnippet: {

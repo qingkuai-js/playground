@@ -201,5 +201,3 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
     // 完成加载
     handlerResolver()
 }
-
-function notifyFileLoaded() {}
