@@ -10,7 +10,7 @@
     },
     "dependencies": {
         "monaco-editor-core": "^0.52.2",
-        "qingkuai": "^1.0.46",
+        "qingkuai": "^1.0.47",
         "semver": "^7.7.1"
     },
     "devDependencies": {
@@ -23,7 +23,7 @@
         "onigasm": "^2.2.5",
         "prettier": "^3.5.3",
         "prettier-plugin-qingkuai": "^1.0.24",
-        "qingkuai-language-service": "^1.0.6",
+        "qingkuai-language-service": "^1.0.8",
         "sass-embedded": "^1.86.3",
         "typescript": "^5.8.3",
         "vite": "^6.2.5",

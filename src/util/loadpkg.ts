@@ -49,6 +49,6 @@ export { default as monacoTextMate } from "https://esm.sh/monaco-textmate@3.0.1"
 export { default as monacoEditorTextMate } from "https://esm.sh/monaco-editor-textmate@4.0.0"
 
 export * as csstree from "https://esm.sh/css-tree@3.1.0"
-export * as qingkuaiLanguageService from "https://esm.sh/qingkuai-language-service@1.0.6"
+export * as qingkuaiLanguageService from "https://esm.sh/qingkuai-language-service"
 export * as vscodeLanguageServerTypes from "https://esm.sh/vscode-languageserver-types@3.17.5"
-export * as qingkuaiLanguageServiceAdapter from "https://esm.sh/qingkuai-language-service@1.0.6/adapters"
+export * as qingkuaiLanguageServiceAdapter from "https://esm.sh/qingkuai-language-service/adapters"
