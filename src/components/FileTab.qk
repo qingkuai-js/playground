@@ -15,6 +15,7 @@
     let waitForDeleteIndex = -1
     const showButtons = props.location === "left"
     const validFileNameRE = /^[^\/\\]+\.(?:qk|[jt]s)$/
+    const fileTabInputElements: HTMLInputElement[] = []
     const container = store[props.location === "left" ? "leftFileTab" : "rightFileTab"]
 
     function handleAddTab() {
@@ -30,11 +31,12 @@
         addModel(getLanguageId(newFileName), newFileName)
     }
 
-    function showInput(this: HTMLSpanElement, index: number) {
+    function showInput(index: number) {
         if (props.location === "left" && index) {
-            const input = this.parentElement!.childNodes[1] as HTMLInputElement
+            setTimeout(() => {
+                fileTabInputElements[index].select()
+            })
             originalFileName = container.tabs[(inputIndex = index)]
-            setTimeout(input.select.bind(input))
         }
     }
 
@@ -121,6 +123,7 @@
                 spellcheck="false"
                 @blur={handleConfirmRename}
                 &value={container.tabs[index]}
+                &dom={fileTabInputElements[index]}
                 @keyup|enter={handleConfirmRename}
             />
         </p>

@@ -1,5 +1,6 @@
 import type TS from "typescript"
 import type { QingkuaiCompiler } from "./common"
+import type { TypescriptAdapter } from "qingkuai-language-service/adapters"
 import type { PrettierAndPlugins, ProjectKind } from "qingkuai-language-service"
 
 export type SetStateOptions = Partial<{
@@ -7,6 +8,7 @@ export type SetStateOptions = Partial<{
     system: TS.System
     isReload: boolean
     projectKind: ProjectKind
+    adapter: TypescriptAdapter
     tsLanguageService: TS.LanguageService
     prettierAndPlugins: PrettierAndPlugins
     updateFile: (fileName: string) => void

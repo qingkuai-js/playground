@@ -1,52 +1,34 @@
+import {
+    PositionFlag,
+    type ASTLocation,
+    type ASTPositionWithFlag,
+    type CompileIntermediateResult as OriginalCompileResult
+} from "qingkuai/compiler"
 import type { Model } from "../types/communication"
-import type { Position } from "vscode-languageserver-types"
 import type { RuntimeCompileResult } from "../types/common"
 import type { CompileResult } from "qingkuai-language-service"
-import type { ASTLocation, ASTPositionWithFlag, CompileResult as OriginalCompileResult } from "qingkuai/compiler"
 
 import {
     ts,
     fsMap,
+    adapter,
     setState,
     updateFile,
     projectKind,
-    compileCache,
-    typeRefStatement,
+    interCompileCache,
     qingkuaiCompiler,
     prettierAndPlugins
 } from "./state"
 import { pathImplementation } from "./mock"
 import { isQingkuaiFile } from "../util/assert"
-import { fileUriToPath, getLineStarts } from "../util/sundary"
+import { fileUriToPath } from "../util/sundary"
+import { TextDocument } from "vscode-languageserver-textdocument"
 import { qingkuaiLanguageService, csstree } from "../util/loadpkg"
 
-const config: CompileResult["config"] = {
-    workspacePath: "/",
-    extensionConfig: {
-        typescriptDiagnosticsExplain: true,
-        insertSpaceAroundInterpolation: false,
-        componentTagFormatPreference: "camel",
-        additionalCodeLens: ["component", "slot"],
-        componentAttributeFormatPreference: "camel",
-        htmlHoverTip: ["tag", "entity", "attribute"]
-    },
-    prettierConfig: {
-        tabWidth: 4,
-        semi: false,
-        arrowParens: "avoid",
-        trailingComma: "all",
-        singleAttributePerLine: true,
-        qingkuai: {
-            spaceAroundInterpolation: false,
-            componentTagFormatPreference: "camel",
-            componentAttributeFormatPreference: "camel"
-        }
-    }
-}
 const runtimeCompileResultCache: Record<string, RuntimeCompileResult> = {}
 
 export function getInterCompileResultByPath(path: string) {
-    return compileCache.get(path)!
+    return interCompileCache.get(path)!
 }
 
 export async function compileToRuntime({ uri, source }: Model, debug: boolean, comment: boolean) {
@@ -54,6 +36,7 @@ export async function compileToRuntime({ uri, source }: Model, debug: boolean, c
     const cached = runtimeCompileResultCache[filePath]
     const [prettier, ...plugins] = prettierAndPlugins
     const targetIsQingkuaiFile = isQingkuaiFile(filePath)
+
     if (
         cached &&
         cached.source === source &&
@@ -62,18 +45,20 @@ export async function compileToRuntime({ uri, source }: Model, debug: boolean, c
         return cached
     }
     try {
-        const baseResult = { debug, source, comment }
+        const baseResult = {
+            debug,
+            source,
+            comment
+        }
         if (targetIsQingkuaiFile) {
             const cr = qingkuaiCompiler.compile(source, {
                 debug,
-                comment,
                 sourcemap: false,
                 hashId: cached?.hashId,
-                reserveTemplateComment: true,
-                convenientDerivedDeclaration: true,
-                componentName: qingkuaiLanguageService.util.filePathToComponentName(pathImplementation, filePath)
+                interpretiveComments: comment,
+                shorthandDerivedDeclaration: true
             })
-            const scopedStyleCodes = cr.inputDescriptor.styles.map(item => {
+            const scopedStyleCodes = cr.styleDescriptors.map(item => {
                 return addScopeToSelectors(item.code, cr.hashId)
             })
             runtimeCompileResultCache[filePath] = {
@@ -86,7 +71,7 @@ export async function compileToRuntime({ uri, source }: Model, debug: boolean, c
                 style: await prettier.format(scopedStyleCodes.join("\n"), {
                     plugins,
                     parser: "css",
-                    ...config.prettierConfig
+                    ...getConfig(filePath).prettierConfig
                 })
             }
         } else {
@@ -108,50 +93,90 @@ export async function compileToRuntime({ uri, source }: Model, debug: boolean, c
 
 export function compileToInterCode({ uri, version, source }: Model) {
     const filePath = fileUriToPath(uri)
-    const cached = compileCache.get(filePath)
+    const cached = interCompileCache.get(filePath)
+    const document = TextDocument.create(uri, "", version, source)
     if (cached?.version === version) {
         return cached
     }
 
     let cr: OriginalCompileResult
     if (isQingkuaiFile(uri)) {
-        cr = qingkuaiCompiler.compile(source, { check: true, typeRefStatement })
+        cr = qingkuaiCompiler.compileIntermediate(source, {
+            typeDeclarationFilePath: adapter.typeDeclarationFilePath
+        })
     } else {
         cr = mockCompileNonQingkuaiFile({ uri, version, source })
     }
 
-    const lineStarts = getLineStarts(source)
-    const isTS = cr.inputDescriptor.script.isTS
-    const positions = cr.inputDescriptor.positions
-    const getPosition = qingkuaiLanguageService.util.getPositionGen(positions)
+    const isTS = cr.scriptDescriptor.isTS
+    const scriptLanguageId = isTS ? "typescript" : "javascript"
     if (isTS && projectKind !== qingkuaiLanguageService.ProjectKind.TS) {
         setState({
             projectKind: qingkuaiLanguageService.ProjectKind.TS
         })
     }
 
-    const getOffset = (position: Position) => {
-        return lineStarts[position.line] + position.character
-    }
-
-    const ret: CompileResult = {
-        ...cr,
+    const ret = Object.assign(cr, {
         uri,
-        config,
         version,
         filePath,
-        getOffset,
-        getPosition,
-        code: cr.code,
+        document,
+        scriptLanguageId,
         isSynchronized: true,
-        scriptLanguageId: isTS ? "typescript" : "javascript",
-        getRange: qingkuaiLanguageService.util.getRangeGen(getPosition),
-        isPositionFlagSet: qingkuaiLanguageService.util.isPositionFlagSetGen(positions),
-        getInterIndex: qingkuaiLanguageService.util.getInterIndexGen(cr.interIndexMap.stoi),
-        getSourceIndex: qingkuaiLanguageService.util.getSourceIndexGen(cr.interIndexMap.itos),
-        builtInTypeDeclarationEndIndex: cr.typeDeclarationLen + typeRefStatement.length
-    }
-    return compileCache.set(filePath, ret), fsMap.set(filePath, cr.code), updateFile(filePath), ret
+        config: getConfig(filePath),
+        getVscodeRange(startOrLoc: number | ASTLocation, end?: number) {
+            if (typeof startOrLoc === "number") {
+                return {
+                    start: document.positionAt(startOrLoc),
+                    end: document.positionAt(end ?? startOrLoc + 1)
+                }
+            }
+            return {
+                start: document.positionAt(startOrLoc.start.index),
+                end: document.positionAt(startOrLoc.end.index)
+            }
+        }
+    }) as CompileResult
+    return interCompileCache.set(filePath, ret), fsMap.set(filePath, cr.code), updateFile(filePath), ret
+}
+
+function getConfig(filePath: string) {
+    return {
+        dirPath: "/",
+        qingkuaiConfig: {
+            whitespace: "trim-collapse",
+            preserveHtmlComments: "all",
+            reactivityMode: "reactive",
+            interpretiveComments: true,
+            resolveImportExtension: true,
+            shorthandDerivedDeclaration: true
+        },
+        prettierConfig: {
+            tabWidth: 4,
+            semi: false,
+            arrowParens: "avoid",
+            trailingComma: "all",
+            singleAttributePerLine: true,
+            qingkuai: {
+                spaceAroundInterpolation: false,
+                componentTagFormatPreference: "camel",
+                componentAttributeFormatPreference: "camel"
+            }
+        },
+        extensionConfig: {
+            hoverTipReactiveStatus: true,
+            typescriptDiagnosticsExplain: true,
+            insertSpaceAroundInterpolation: false,
+            componentTagFormatPreference: "camel",
+            additionalCodeLens: ["component", "slot"],
+            componentAttributeFormatPreference: "camel",
+            htmlHoverTip: ["attribute", "entity", "tag"]
+        },
+        typescriptConfig: {
+            preference: adapter.getUserPreferences(filePath),
+            formatCodeSettings: adapter.getFormattingOptions(filePath)
+        }
+    } satisfies CompileResult["config"]
 }
 
 function mockCompileNonQingkuaiFile({ source, uri }: Model): OriginalCompileResult {
@@ -164,7 +189,7 @@ function mockCompileNonQingkuaiFile({ source, uri }: Model): OriginalCompileResu
             line,
             column,
             index: i,
-            flag: qingkuaiCompiler.PositionFlag[isCss ? "inStyle" : "inScript"]
+            flag: isCss ? PositionFlag.InStyle : PositionFlag.InScript
         })
         source[i] === "\n" ? (line++, (column = 0)) : column++
     }
@@ -174,55 +199,47 @@ function mockCompileNonQingkuaiFile({ source, uri }: Model): OriginalCompileResu
         end: positions[positions.length - 1]
     }
     return {
-        code: isCss ? "" : source,
-        hashId: "",
-        mappings: "",
-        interIndexMap: {
+        indexMap: {
             itos: interIndexMap,
             stoi: interIndexMap
         },
+        scriptDescriptor: {
+            existing: !isCss,
+            code: isCss ? "" : source,
+            startTagOpenRange: [0, 0],
+            isTS: uri.endsWith(".ts"),
+            lineCount: sourceLoc.end.line,
+            loc: {
+                start: positions[0],
+                end: positions[positions.length - 1]
+            }
+        },
+        styleDescriptors: isCss
+            ? [
+                  {
+                      code: source,
+                      loc: sourceLoc,
+                      lang: "css",
+                      startTagOpenRange: [0, 0]
+                  }
+              ]
+            : [],
+        positions,
         messages: [],
-        typeDeclarationLen: 0,
+        slotNames: [],
         templateNodes: [],
-        inputDescriptor: {
-            source,
-            positions,
-            options: {
-                componentName: "",
-                hashId: "",
-                check: false,
-                debug: false,
-                comment: false,
-                sourcemap: false,
-                typeRefStatement: "",
-                reserveTemplateComment: false,
-                convenientDerivedDeclaration: false
-            },
-            slotInfo: {},
-            indentSpaceCount: 0,
-            script: {
-                isTS: extension === "ts",
-                code: source,
-                existing: true,
-                generatedOffset: [0, 0],
-                lineCount: 0,
-                loc: sourceLoc,
-                startTagNameRange: [0, 0]
-            },
-            styles: isCss
-                ? [
-                      {
-                          code: source,
-                          lang: "css",
-                          loc: sourceLoc,
-                          startTagNameRange: [0, 0]
-                      }
-                  ]
-                : [],
-            stringConstantCount: 0,
-            refAttrValueStartIndexes: []
-        }
-    }
+        identifierStatusInfo: {},
+        code: isCss ? "" : source,
+        getTypeDelayInterIndexes: [],
+
+        // @ts-ignore
+        constructor: (() => 0) as any,
+        getInterIndex: i => i,
+        getSourceIndex: i => i,
+        getSlotTemplateNode: () => 0 as any,
+        getTemplateNodeContext: () => 0 as any,
+        isPositionFlagSetAtIndex: (flag, index) => !!(flag & positions[index].flag)
+    } satisfies OriginalCompileResult
 }
 function addScopeToSelectors(css: string, hash: string): string {
     const ast = csstree.parse(css)

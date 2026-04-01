@@ -1,12 +1,16 @@
 import type { ShowReferencesCommandParams } from "qingkuai-language-service"
 
 import * as monaco from "monaco-editor-core"
+
 import { hasBeenEdited, leftEditor } from "../util/state"
 import { convertLocations } from "./languages/convertor/location"
-import EditorWoker from "monaco-editor-core/esm/vs/editor/editor.worker?worker"
 
 self.MonacoEnvironment = {
-    getWorker: () => new EditorWoker()
+    getWorker: () => {
+        return new Worker(new URL("monaco-editor-core/esm/vs/editor/editor.worker.js", import.meta.url), {
+            type: "module"
+        })
+    }
 }
 
 window.addEventListener("unhandledrejection", event => {

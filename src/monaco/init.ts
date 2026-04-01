@@ -20,6 +20,7 @@ export async function initializeMonacoEditor() {
         leftEditor: monaco.editor.create(
             document.querySelector(".editors .left")!,
             {
+                fontFamily: '"JetBrains Mono", Menlo, Monaco, "Courier New", monospace',
                 fontSize: 13,
                 minimap: {
                     enabled: false
@@ -43,16 +44,18 @@ export async function initializeMonacoEditor() {
             }
         ),
         rightEditor: monaco.editor.create(document.querySelector(".editors .right")!, {
+            minimap: {
+                enabled: false
+            },
             readOnly: true,
             fontSize: 13,
+            lineHeight: 1.8,
             overviewRulerLanes: 0,
             renderLineHighlight: "none",
             selectionHighlight: false,
             occurrencesHighlight: "off",
             theme: "monokai-pro-spectrum",
-            minimap: {
-                enabled: false
-            }
+            fontFamily: '"JetBrains Mono", Menlo, Monaco, "Courier New", monospace'
         })
     })
 
@@ -175,7 +178,7 @@ function proxyOpenEditor() {
 }
 
 function registerPublishDiagnostic() {
-    // 为model添加发布诊断功能
+    // 为 model 添加发布诊断功能
     monaco.editor.onDidCreateModel(model => {
         if (isExternalFile(model)) {
             return

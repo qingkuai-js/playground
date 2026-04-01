@@ -1,6 +1,5 @@
 import type Monaco from "monaco-editor-core"
 import type { Model } from "../types/communication"
-import type { RealPath } from "qingkuai-language-service"
 
 import { isQingkuaiFile } from "./assert"
 
@@ -9,7 +8,7 @@ export function lastElem<T>(arr: T[]): T {
 }
 
 export function fileUriToPath(uri: string) {
-    return uri.replace(/^file:\/\//, "") as RealPath
+    return uri.replace(/^file:\/\//, "")
 }
 
 // 获取内容每行开始处的索引列表

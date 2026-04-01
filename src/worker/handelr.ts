@@ -1,33 +1,32 @@
 import type Monaco from "monaco-editor-core"
 import type { Color } from "vscode-languageserver-types"
 import type { MessageBoxProps } from "../types/component"
-import type { InsertSnippetParam } from "qingkuai-language-service"
+import type { InsertSnippetParams } from "qingkuai-language-service"
 import type { Model, WorkerHandlerBaseParam } from "../types/communication"
 import type { MonacoCodeLensItemWithOriginal, MonacoCompletionItemWithOriginal } from "../types/monaco"
 
 import {
     fsMap,
+    adapter,
     handlerPms,
     deleteFile,
     projectKind,
-    compileCache,
+    interCompileCache,
     scriptVersion,
-    tsLanguageService,
     prettierAndPlugins
 } from "./state"
 import { Handlers } from "../util/constants"
+import { qingkuaiLanguageService } from "../util/loadpkg"
 import { isQingkuaiFile, isString } from "../util/assert"
 import { loadTypescriptAndQingkuaiCompiler } from "./load"
-import { createLsTextDocument, pathImplementation } from "./mock"
-import { qingkuaiLanguageService, qingkuaiLanguageServiceAdapter } from "../util/loadpkg"
 import { compileToInterCode, compileToRuntime, getInterCompileResultByPath } from "./compile"
 
 const {
     rename,
     format,
     doHover,
-    codeLens,
     doComplete,
+    getCodeLens,
     prepareRename,
     getDiagnostic,
     findReferences,
@@ -36,10 +35,8 @@ const {
     getDocumentColors,
     findImplementations,
     getColorPresentations,
-    resolveEmmetCompletion,
     resolveScriptBlockCompletion
 } = qingkuaiLanguageService
-const { convertor } = qingkuaiLanguageServiceAdapter
 
 self.onmessage = async ({ data: { id, name, arg } }: { data: WorkerHandlerBaseParam }) => {
     const response = (arg: any) => {
@@ -93,14 +90,14 @@ self.onmessage = async ({ data: { id, name, arg } }: { data: WorkerHandlerBasePa
         case Handlers.FindImplementations: {
             return response(await _findImplementations(arg.model, arg.offset))
         }
-        case Handlers.GetCompletions: {
-            return response(await _doComplete(arg.model, arg.offset, arg.trigger))
-        }
         case Handlers.GetCompileResult: {
             return response(await _getCompileResult(arg.model, arg.debug, arg.comment))
         }
         case Handlers.GetColorPresentations: {
             return response(await _getColorPresentations(arg.model, arg.range, arg.color))
+        }
+        case Handlers.GetCompletions: {
+            return response(await _doComplete(arg.model, arg.offset, arg.triggerKind, arg.triggerCharacter))
         }
     }
 }
@@ -108,7 +105,7 @@ self.onmessage = async ({ data: { id, name, arg } }: { data: WorkerHandlerBasePa
 async function _deleteFile(fileName: string) {
     deleteFile(fileName)
     fsMap.delete(fileName)
-    compileCache.delete(fileName)
+    interCompileCache.delete(fileName)
     scriptVersion.delete(fileName)
 }
 
@@ -117,11 +114,10 @@ async function _getCompileResult(model: Model, debug: boolean, comment: boolean)
 }
 
 async function _codeLens(model: Model) {
-    return await codeLens(
+    return await getCodeLens(
         compileToInterCode(model),
-        pathImplementation,
         fileName => {
-            return tsLanguageService.getNavigationTree(fileName)
+            return adapter.service.getNavigationTree(fileName)
         },
         () => {
             return {
@@ -139,11 +135,21 @@ async function _codeLens(model: Model) {
 }
 
 async function _resolveCodeLens(codeLens: MonacoCodeLensItemWithOriginal) {
-    return await resolveCodeLens(codeLens._ori, getInterCompileResultByPath, (fileName, pos, type) => {
-        if (type === "implementation") {
-            return convertor.findAndConvertImplementations(tsLanguageService, { fileName, pos })
+    return await resolveCodeLens(codeLens._ori, (fileName, pos, type) => {
+        switch (type) {
+            case "reference": {
+                return adapter.service.getReferences({
+                    pos,
+                    fileName
+                })
+            }
+            case "implementation": {
+                return adapter.service.getImplementations({
+                    pos,
+                    fileName
+                })
+            }
         }
-        return convertor.findAndConvertReferences(tsLanguageService, getInterCompileResultByPath, { fileName, pos })
     })
 }
 
@@ -159,7 +165,12 @@ async function _doHover(model: Model, offset: number) {
                 documentation: true
             }
         },
-        (fileName, pos) => convertor.getAndConvertHoverTip(tsLanguageService, { fileName, pos }),
+        (fileName, pos) => {
+            return adapter.service.getHoverTip({
+                pos,
+                fileName
+            })
+        },
         _getComponentInfos
     )
     return languageServiceRet
@@ -168,72 +179,79 @@ async function _doHover(model: Model, offset: number) {
 async function _getDiagnostics(model: Model) {
     const cr = compileToInterCode(model)
     const ret = await getDiagnostic(cr, fileName => {
-        return convertor.getAndConvertDiagnostics(tsLanguageService, fileName, true)
+        return adapter.service.getDiagnostics(fileName)
     })
-    cr.inputDescriptor.styles.forEach(item => {
+    cr.styleDescriptors.forEach(item => {
         if (item.lang !== "css") {
             ret.push({
                 message: `The ${item.lang} pre-processor is not supported in playground for the moment.`,
-                range: cr.getRange(...item.startTagNameRange)
+                range: cr.getVscodeRange(...item.startTagOpenRange)
             })
         }
     })
     return ret
 }
 
-async function _doComplete(model: Model, offset: number, trigger: string) {
+async function _doComplete(model: Model, offset: number, triggerKind: number, triggerCharacter: string) {
     const cr = compileToInterCode(model)
     return await doComplete(
         cr,
         offset,
-        trigger,
-        createLsTextDocument(model.uri, model.version, model.source, "html"),
+        triggerCharacter,
         false,
         projectKind,
         _insertSnippet,
         _getComponentInfos,
-        (fileName, pos) => convertor.getAndConvertCompletionInfo(tsLanguageService, { fileName, pos })
+        (fileName, pos) => {
+            return adapter.service.getCompletionInfo({
+                pos,
+                fileName,
+                triggerKind,
+                triggerCharacter
+            })
+        },
+        triggerKind as any
     )
 }
 
 async function _resolveCompletionItem(item: MonacoCompletionItemWithOriginal) {
-    switch (item._ori.data?.kind) {
-        case "emmet":
-            return resolveEmmetCompletion(item._ori)
-        case "script":
-            return resolveScriptBlockCompletion(item._ori, getInterCompileResultByPath, item =>
-                convertor.getAndConvertCompletionDetail(tsLanguageService, item.data)
-            )
-    }
-    return item
+    return resolveScriptBlockCompletion(item._ori, getInterCompileResultByPath, item =>
+        adapter.service.getCompletionDetail(item.data)
+    )
 }
 
 async function _prepareRename(model: Model, offset: number) {
     return await prepareRename(compileToInterCode(model), offset, (cr, pos) => {
-        return convertor.prepareRenameAndConvert(tsLanguageService, { fileName: cr.filePath, pos })
+        return adapter.service.getAndConvertPrepareRenameLocation({
+            pos,
+            fileName: cr.filePath
+        })
     })
 }
 
 async function _rename(model: Model, offset: number, newName: string) {
     return await rename(compileToInterCode(model), offset, newName, getInterCompileResultByPath, (fileName, pos) => {
-        return convertor.renameAndConvert(tsLanguageService, { fileName, pos })
+        return adapter.service.getRenameLocations({
+            pos,
+            fileName
+        })
     })
 }
 
 async function _formatDocument(model: Model) {
     if (!isQingkuaiFile(model.uri)) {
         const cr = compileToInterCode(model)
-        const isTS = cr.inputDescriptor.script.isTS
-        const isCSS = !!cr.inputDescriptor.styles[0]
+        const isTS = cr.scriptDescriptor.isTS
+        const isCSS = !!cr.styleDescriptors[0]
         const [prettier, ...plugins] = prettierAndPlugins
         return [
             {
                 newText: await prettier.format(model.source, {
                     plugins,
-                    ...cr.config.prettierConfig,
+                    ...cr.config!.prettierConfig,
                     parser: isCSS ? "css" : isTS ? "babel-ts" : "babel"
                 }),
-                range: cr.getRange(0, cr.inputDescriptor.source.length)
+                range: cr.getVscodeRange(0, cr.document.getText().length)
             }
         ]
     }
@@ -241,39 +259,37 @@ async function _formatDocument(model: Model) {
 }
 
 async function _findDefinitions(model: Model, offset: number) {
-    return await findDefinitions(
-        compileToInterCode(model),
-        offset,
-        pathImplementation,
-        getInterCompileResultByPath,
-        _getComponentInfos,
-        (cr, pos) => convertor.getAndConvertDefinitions(tsLanguageService, { fileName: cr.filePath, pos })
-    )
+    return await findDefinitions(compileToInterCode(model), offset, (cr, pos) => {
+        return adapter.service.getDefinitions({
+            pos,
+            fileName: cr.filePath
+        })
+    })
 }
 
 async function _findImplementations(model: Model, offset: number) {
     return await findImplementations(compileToInterCode(model), offset, (fileName, pos) => {
-        return convertor.findAndConvertImplementations(tsLanguageService, { fileName, pos })
+        return adapter.service.getImplementations({
+            pos,
+            fileName
+        })
     })
 }
 
 async function _findReferences(model: Model, offset: number) {
-    return await findReferences(
-        compileToInterCode(model),
-        offset,
-        pathImplementation,
-        getInterCompileResultByPath,
-        (fileName, pos) => {
-            return convertor.findAndConvertReferences(tsLanguageService, getInterCompileResultByPath, { fileName, pos })
-        }
-    )
+    return await findReferences(compileToInterCode(model), offset, (fileName, pos) => {
+        return adapter.service.getReferences({
+            pos,
+            fileName
+        })
+    })
 }
 
 function _getDocumentColors(model: Model) {
     return getDocumentColors(compileToInterCode(model))
 }
 
-function _insertSnippet(param: string | InsertSnippetParam) {
+function _insertSnippet(param: string | InsertSnippetParams) {
     const paramIsString = isString(param)
     self.postMessage({
         name: Handlers.insertSnippet,
@@ -283,7 +299,7 @@ function _insertSnippet(param: string | InsertSnippetParam) {
 }
 
 function _getComponentInfos(fileName: string) {
-    return convertor.getComponentInfos(tsLanguageService, fileName)
+    return adapter.service.getComponentInfos(fileName)
 }
 
 function _showMessage(type: MessageBoxProps["type"], value: string) {

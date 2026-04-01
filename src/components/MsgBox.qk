@@ -5,7 +5,7 @@
 <div
     class="message-box left"
     !class={store.message.left.type}
-    #show={store.message.left.value}
+    !hidden={!store.message.left.value}
     #target={document.body}
 >
     {store.message.left.value}
@@ -18,7 +18,7 @@
             light: store.rightFileTab.activeIndex === 0
         }
     }
-    #show={store.message.right.value}
+    !hidden={!store.message.right.value}
     #target={document.body}
 >
     {store.message.right.value}

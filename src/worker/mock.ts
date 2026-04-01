@@ -1,10 +1,10 @@
-import type { CustomFS, CustomPath } from "qingkuai-language-service"
-import type { TextDocument } from "vscode-languageserver-textdocument"
+import type { AdapterFS, AdapterPath } from "qingkuai-language-service"
+import { TextDocument } from "vscode-languageserver-textdocument"
 
 import { fsMap } from "./state"
 import { getLineStarts } from "../util/sundary"
 
-export const fsImplementation: CustomFS = {
+export const fsImplementation: AdapterFS = {
     exist(path) {
         return fsMap.has(path)
     },
@@ -13,7 +13,7 @@ export const fsImplementation: CustomFS = {
     }
 }
 
-export const pathImplementation: CustomPath = {
+export const pathImplementation: AdapterPath = {
     resolve(...segments) {
         const resultParts: string[] = []
 
@@ -73,45 +73,5 @@ export const pathImplementation: CustomPath = {
         const extname = this.ext(path)
         const subStartIndex = path.lastIndexOf("/") + 1
         return path.slice(subStartIndex, extname ? -extname.length : undefined)
-    }
-}
-
-export const createLsTextDocument = (
-    uri: string,
-    version: number,
-    content: string,
-    languageId: string
-): TextDocument => {
-    const lineStarts = getLineStarts(content)
-    return {
-        uri,
-        version,
-        languageId,
-        lineCount: lineStarts.length,
-        offsetAt(position) {
-            for (let i = 0; i < lineStarts.length; i++) {
-                if (position.line === i) {
-                    return lineStarts[i] + position.character
-                }
-            }
-            return -1
-        },
-        positionAt(offset) {
-            for (let i = 0; i < lineStarts.length; i++) {
-                if (offset >= lineStarts[i] && (i === lineStarts.length - 1 || offset < lineStarts[i + 1])) {
-                    return {
-                        line: i,
-                        character: offset - i
-                    }
-                }
-            }
-            throw "never"
-        },
-        getText(range) {
-            if (!range) {
-                return content
-            }
-            return content.slice(this.offsetAt(range.start) || 0, this.offsetAt(range.end) || content.length)
-        }
     }
 }

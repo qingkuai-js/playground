@@ -43,29 +43,39 @@ export const defaultMessage = {
 
 // prettier-ignore
 export const initialComponentCode = `\
-<lang-ts>
-    let target = "World"
+<lang-js>
+    let count = 1
+    let name = "World"
 
     setTimeout(() => {
-        target = "Qingkuai"
+        name = "Qingkuai"
     }, 1000)
-</lang-ts>
+</lang-js>
 
-<h1>Hello {target}!</h1>
-<label>
-    Say hello to:
-    <input
-        &value={target}
-        spellcheck="false"
-    />
-</label>
+<h1>Hello {name}!</h1>
+<input &value={name} />
+
+<button
+    class="btn"
+    @click={count++}
+>
+    You have clicked {count} times.
+</button>
 
 <lang-css>
     h1 {
         color: #2296f3;
     }
     input {
-        margin-left: 8px;
+        margin-right: 8px;
+    }
+    button {
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 3px 5px;
+        border-radius: 3px;
+        background-color: black;
     }
 </lang-css>
 `

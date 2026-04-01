@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "vite-plugin",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npm",
+            "console": "integratedTerminal",
+            "autoAttachChildProcesses": true,
+            "runtimeArgs": ["run-script", "dev"],
+            "outFiles": [
+                "${workspaceFolder}/**/*.(m|c|)js",
+                "/Users/lianggaoqiang/Desktop/QingKuai/vite-plugin/dist/**/*.js"
+            ],
+            "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
+        }
+    ]
+}

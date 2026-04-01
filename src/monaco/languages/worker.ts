@@ -1,15 +1,17 @@
 import type Monaco from "monaco-editor-core"
 import type { Model } from "../../types/communication"
-import type { MonacoCodeLensItemWithOriginal, MonacoCompletionItemWithOriginal } from "../../types/monaco"
 import type { GeneralFunc, PromiseWithState, RuntimeCompileResult } from "../../types/common"
+import type { MonacoCodeLensItemWithOriginal, MonacoCompletionItemWithOriginal } from "../../types/monaco"
 
 import * as monaco from "monaco-editor-core"
+
+import LanguageWorker from "../../worker/handelr?worker"
+
 import { Handlers } from "../../util/constants"
 import { convertHover } from "./convertor/hover"
 import { leftEditor, store } from "../../util/state"
-import { isExternalFileName } from "../../util/assert"
+import { isExternalFileName, isUndefined } from "../../util/assert"
 import { convertLocations } from "./convertor/location"
-import LanguageWorker from "../../worker/handelr?worker"
 import { convertDiagnostic } from "./convertor/diagnostic"
 import { qingkuaiLanguageService } from "../../util/loadpkg"
 import { convertCodeLens, convertCodeLensList } from "./convertor/code-lens"
@@ -85,10 +87,22 @@ export default class {
     public async getCompletions(
         model: Model,
         offset: number,
-        trigger: string,
+        triggerKind: number,
+        triggerCharacter: string,
         defaultRange: Monaco.IRange
     ): Promise<Monaco.languages.CompletionList | null> {
-        return convertCompletions(await this.request(Handlers.GetCompletions, { model, offset, trigger }), defaultRange)
+        if (!isUndefined(triggerKind)) {
+            triggerKind++
+        }
+        return convertCompletions(
+            await this.request(Handlers.GetCompletions, {
+                model,
+                offset,
+                triggerKind,
+                triggerCharacter
+            }),
+            defaultRange
+        )
     }
 
     public async resolveCompletionItem(

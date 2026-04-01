@@ -1,10 +1,12 @@
-import LanguageWorker from "./worker"
 import * as monaco from "monaco-editor-core"
+
+import LanguageWorker from "./worker"
+
 import { languages } from "./configurations"
 import { isExternalFile } from "../../util/assert"
 import { getClonableModel } from "../../util/sundary"
-import { qingkuaiLanguageService } from "../../util/loadpkg"
 import { setState, store, worker } from "../../util/state"
+import { qingkuaiLanguageService } from "../../util/loadpkg"
 
 export function registerQingkuaiProviders() {
     setState({
@@ -14,7 +16,7 @@ export function registerQingkuaiProviders() {
     const languageWorker = worker
     const languageSelector = languages.map(lang => lang.id)
 
-    // 加载typescript language service, qingkuai compiler
+    // 加载 typescript language service, qingkuai compiler
     languageWorker.loadCore(store.tsVersion, store.qingkuaiVersion).then(() => {
         store.resolving = false
     })
@@ -38,6 +40,7 @@ export function registerQingkuaiProviders() {
             return languageWorker.getCompletions(
                 getClonableModel(model),
                 model.getOffsetAt(position),
+                context.triggerKind,
                 context.triggerCharacter ?? "",
                 {
                     endColumn: position.column,

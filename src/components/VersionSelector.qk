@@ -12,7 +12,7 @@
     let mainDom!: HTMLDivElement
     let candidateVersions: string[] = []
     const formatedPkgName = props.package[0].toUpperCase() + props.package.slice(1)
-    const currentVersion = der(store[props.package === "qingkuai" ? "qingkuaiVersion" : "tsVersion"])
+    const currentVersion = derivedExp(store[props.package === "qingkuai" ? "qingkuaiVersion" : "tsVersion"])
 
     function handleSelectVersion(version: string) {
         if (props.package === "typescript") {
@@ -54,7 +54,7 @@
     ></i>
     <ul
         class="selection-box"
-        #show={showVersionList}
+        !hidden={!showVersionList}
     >
         <li
             #for={item of candidateVersions}

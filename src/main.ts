@@ -9,5 +9,5 @@ import "./monaco/themes/monakai-spectrum"
 import { mountApp } from "qingkuai"
 import App from "./components/App.qk"
 
-mountApp("#app", App)
+mountApp(App, "#app")
 navigator.serviceWorker.register("/sw.js")

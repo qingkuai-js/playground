@@ -35,8 +35,7 @@ export function render() {
                 }
             }
 
-            window.__qk_expose_dependencies__=false
-            window.__qk_expose_destructions__=false
+            window.__qk_max_schedule_depth = 300
 
             window.onerror=msg=>{
                 window.parent.postMessage({
@@ -51,7 +50,8 @@ export function render() {
                 window.parent.postMessage(data)
             }
 
-            mountApp("body", (await import("./App")).default)
+            const component = (await import("./App")).default
+            mountApp(component, "body")
         </script>
     `
 }

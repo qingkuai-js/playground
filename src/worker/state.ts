@@ -1,9 +1,9 @@
 import type TS from "typescript"
 import type { SetStateOptions } from "../types/worker"
 import type { QingkuaiCompiler } from "../types/common"
+import type { TypescriptAdapter } from "qingkuai-language-service/adapters"
 import type { CompileResult, ComponentAttributeItem, PrettierAndPlugins } from "qingkuai-language-service"
 
-import qingkuaiEnvDts from "./dts/qingkuai.d.ts?raw"
 import { qingkuaiLanguageService } from "../util/loadpkg"
 import { typeDeclarationFilePath } from "../util/constants"
 
@@ -12,6 +12,7 @@ export let deleteFile: (fileName: string) => void
 
 export let ts: typeof TS
 export let system: TS.System
+export let adapter: TypescriptAdapter
 export let tsLanguageService: TS.LanguageService
 export let prettierAndPlugins: PrettierAndPlugins
 export let qingkuaiCompiler: typeof QingkuaiCompiler
@@ -19,10 +20,10 @@ export let tsLanguageServiceHost: TS.LanguageServiceHost
 export let projectKind = qingkuaiLanguageService.ProjectKind.JS
 export let [handlerPms, handlerResolver] = qingkuaiLanguageService.util.generatePromiseAndResolver()
 
+export const fsMap = new Map<string, string>()
 export const scriptVersion = new Map<string, number>()
-export const compileCache = new Map<string, CompileResult>()
+export const interCompileCache = new Map<string, CompileResult>()
 export const componentAttributeInfos = new Map<string, ComponentAttributeItem[]>()
-export const fsMap = new Map<string, string>([[typeDeclarationFilePath, qingkuaiEnvDts]])
 
 export function setState(options: SetStateOptions) {
     if (options.ts) {
@@ -52,9 +53,11 @@ export function setState(options: SetStateOptions) {
     if (options.tsLanguageServiceHost) {
         tsLanguageServiceHost = options.tsLanguageServiceHost
     }
+    if (options.adapter) {
+        adapter = options.adapter
+        fsMap.set(typeDeclarationFilePath, qingkuaiLanguageService.qingkuaiTypeDeclaration)
+    }
     if (options.isReload) {
         ;[handlerPms, handlerResolver] = qingkuaiLanguageService.util.generatePromiseAndResolver()
     }
 }
-
-export const typeRefStatement = `import {__c__,rea,der,wat,Wat,waT} from "${typeDeclarationFilePath.slice(0, -5)}"\n`

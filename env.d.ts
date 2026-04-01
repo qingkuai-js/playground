@@ -42,7 +42,7 @@ declare module "https://esm.sh/prettier@3.5.3/plugins/postcss" {
     export * from "prettier/plugins/postcss"
 }
 
-declare module "https://esm.sh/prettier-plugin-qingkuai@1.0.22" {
+declare module "https://esm.sh/prettier-plugin-qingkuai" {
     export * from "prettier-plugin-qingkuai"
 }
 

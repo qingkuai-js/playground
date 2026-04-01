@@ -13,8 +13,8 @@
         initializeMonacoEditor()
     })
 
-    const inPreview = der(store.rightFileTab.activeIndex === 0)
-    const editorOutterExtraClass = der(store.showingExternalSingleDefinition ? "hide-duplicate-definition" : "")
+    const inPreview = derivedExp(store.rightFileTab.activeIndex === 0)
+    const editorOutterExtraClass = derivedExp(store.showingExternalSingleDefinition ? "hide-duplicate-definition" : "")
 </lang-ts>
 
 <TopBar />
@@ -33,7 +33,7 @@
         <FileTab location="right" />
         <iframe
             &dom={iframe}
-            #show={inPreview}
+            !hidden={!inPreview}
             sandbox="allow-scripts allow-popups allow-forms allow-pointer-lock allow-modals allow-same-origin"
         >
             <h1>...</h1>
@@ -41,8 +41,8 @@
     </div>
 </div>
 <p
-    #show={store.resolving}
     class="service-loading"
+    !hidden={!store.resolving}
 >
     Resolving the qingkuai and typescript langauge service...
 </p>

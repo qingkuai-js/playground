@@ -1,11 +1,12 @@
 import type Monaco from "monaco-editor-core"
-import type { Store } from "../types/component"
 import type LanguageWorker from "../monaco/languages/worker"
+
+import type { Store } from "../types/component"
 import type { FileInfo, SetStateOptions } from "../types/common"
 
 import { createStore } from "qingkuai"
-import { defaultMessage } from "./constants"
 import { isUndefined } from "./assert"
+import { defaultMessage } from "./constants"
 
 export let hasBeenEdited = false
 export let worker: LanguageWorker

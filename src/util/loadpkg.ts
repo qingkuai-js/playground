@@ -3,6 +3,7 @@ import type { QingkuaiCompiler } from "../types/common"
 import type { PrettierAndPlugins } from "qingkuai-language-service"
 
 import * as semver from "semver"
+
 import { store } from "./state"
 import { lastElem } from "./sundary"
 
@@ -32,11 +33,11 @@ export async function loadQingkuaiCompiler(version: string) {
 export async function loadPrettierAndPlugins(): Promise<PrettierAndPlugins> {
     return (await Promise.all([
         import("https://esm.sh/prettier@3.5.3/standalone"),
+        import("https://esm.sh/prettier-plugin-qingkuai"),
         import("https://esm.sh/prettier@3.5.3/plugins/acorn"),
         import("https://esm.sh/prettier@3.5.3/plugins/babel"),
         import("https://esm.sh/prettier@3.5.3/plugins/estree"),
-        import("https://esm.sh/prettier@3.5.3/plugins/postcss"),
-        import("https://esm.sh/prettier-plugin-qingkuai@1.0.22")
+        import("https://esm.sh/prettier@3.5.3/plugins/postcss")
     ])) as any
 }
 
@@ -49,6 +50,10 @@ export { default as monacoTextMate } from "https://esm.sh/monaco-textmate@3.0.1"
 export { default as monacoEditorTextMate } from "https://esm.sh/monaco-editor-textmate@4.0.0"
 
 export * as csstree from "https://esm.sh/css-tree@3.1.0"
-export * as qingkuaiLanguageService from "https://esm.sh/qingkuai-language-service"
 export * as vscodeLanguageServerTypes from "https://esm.sh/vscode-languageserver-types@3.17.5"
-export * as qingkuaiLanguageServiceAdapter from "https://esm.sh/qingkuai-language-service/adapters"
+
+// export * as qingkuaiLanguageService from "https://esm.sh/qingkuai-language-service"
+// export * as qingkuaiLanguageServiceAdapter from "https://esm.sh/qingkuai-language-service/adapters"
+
+export * as qingkuaiLanguageService from "qingkuai-language-service"
+export * as qingkuaiLanguageServiceAdapter from "qingkuai-language-service/adapters"
