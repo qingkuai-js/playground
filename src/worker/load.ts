@@ -1,4 +1,4 @@
-import type TS from "typescript"
+import TS from "typescript"
 
 import type { NumNum } from "../types/common"
 import type { AdapterTsProject, AdapterTsProjectService, TsPluginQingkuaiConfig } from "qingkuai-language-service"
@@ -11,7 +11,7 @@ import {
 } from "../util/loadpkg"
 import { isQingkuaiFile } from "../util/assert"
 import { fsImplementation, pathImplementation } from "./mock"
-import { interCompileCache, fsMap, setState, handlerResolver, scriptVersion } from "./state"
+import { interCompileCache, fsMap, setState, handlerResolver, scriptVersion, projectKind } from "./state"
 import { Handlers, qingkuaiRuntimeDtsPath, typeDeclarationFilePath } from "../util/constants"
 import { createDefaultMapFromCDN, createSystem, createVirtualLanguageServiceHost } from "@typescript/vfs"
 

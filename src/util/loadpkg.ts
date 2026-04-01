@@ -54,6 +54,10 @@ export * as vscodeLanguageServerTypes from "https://esm.sh/vscode-languageserver
 
 // export * as qingkuaiLanguageService from "https://esm.sh/qingkuai-language-service"
 // export * as qingkuaiLanguageServiceAdapter from "https://esm.sh/qingkuai-language-service/adapters"
+// export { default as qingkuaiGrammar } from "https://esm.sh/qingkuai-language-service/grammars/qingkuai"
+// export { default as qingkuaiEmmetGrammar } from "https://esm.sh/qingkuai-language-service/grammars/qingkuai-emmet"
 
 export * as qingkuaiLanguageService from "qingkuai-language-service"
 export * as qingkuaiLanguageServiceAdapter from "qingkuai-language-service/adapters"
+export { default as qingkuaiGrammar } from "qingkuai-language-service/grammars/qingkuai"
+export { default as qingkuaiEmmetGrammar } from "qingkuai-language-service/grammars/qingkuai-emmet"

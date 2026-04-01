@@ -53,3 +53,11 @@ declare module "https://esm.sh/vscode-languageserver-types@3.17.5" {
 declare module "https://esm.sh/qingkuai-language-service/adapters" {
     export * from "qingkuai-language-service/adapters"
 }
+
+declare module "https://esm.sh/qingkuai-language-service/grammars/qingkuai" {
+    export { default } from "qingkuai-language-service/grammars/qingkuai"
+}
+
+declare module "https://esm.sh/qingkuai-language-service/grammars/qingkuai-emmet" {
+    export { default } from "qingkuai-language-service/grammars/qingkuai-emmet"
+}
