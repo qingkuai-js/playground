@@ -53,7 +53,11 @@ export const initialComponentCode = `\
 </lang-js>
 
 <h1>Hello {name}!</h1>
-<input &value={name} />
+
+<input
+    &value={name}
+    spellcheck="false"
+/>
 
 <button
     class="btn"
@@ -69,7 +73,7 @@ export const initialComponentCode = `\
     input {
         margin-right: 8px;
     }
-    button {
+    .btn {
         border: none;
         color: white;
         cursor: pointer;
