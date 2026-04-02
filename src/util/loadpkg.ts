@@ -23,10 +23,12 @@ export async function listVersions(name: "qingkuai" | "typescript") {
 }
 
 export async function loadTypeScript(version: string) {
+    // return (await import(/* @vite-ignore */ `typescript`)) as typeof TS
     return (await import(/* @vite-ignore */ `https://esm.sh/typescript@${version}`)) as typeof TS
 }
 
 export async function loadQingkuaiCompiler(version: string) {
+    // return (await import(/* @vite-ignore */ `qingkuai/compiler`)) as typeof QingkuaiCompiler
     return (await import(/* @vite-ignore */ `https://esm.sh/qingkuai@${version}/compiler`)) as typeof QingkuaiCompiler
 }
 

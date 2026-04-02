@@ -5,7 +5,7 @@ import type { TypescriptAdapter } from "qingkuai-language-service/adapters"
 import type { CompileResult, ComponentAttributeItem, PrettierAndPlugins } from "qingkuai-language-service"
 
 import { qingkuaiLanguageService } from "../util/loadpkg"
-import { typeDeclarationFilePath } from "../util/constants"
+import { Handlers, qingkuaiRuntimeDtsPath, typeDeclarationFilePath } from "../util/constants"
 
 export let updateFile: (fileName: string) => void
 export let deleteFile: (fileName: string) => void
@@ -54,8 +54,18 @@ export function setState(options: SetStateOptions) {
         tsLanguageServiceHost = options.tsLanguageServiceHost
     }
     if (options.adapter) {
+        const content = qingkuaiLanguageService.qingkuaiTypeDeclaration.replace(
+            'from "qingkuai"',
+            `from "${qingkuaiRuntimeDtsPath}"`
+        )
+        self.postMessage({
+            content,
+            name: Handlers.FileLoaded,
+            fileName: typeDeclarationFilePath
+        })
+        console.log(content)
         adapter = options.adapter
-        fsMap.set(typeDeclarationFilePath, qingkuaiLanguageService.qingkuaiTypeDeclaration)
+        fsMap.set(typeDeclarationFilePath, content)
     }
     if (options.isReload) {
         ;[handlerPms, handlerResolver] = qingkuaiLanguageService.util.generatePromiseAndResolver()

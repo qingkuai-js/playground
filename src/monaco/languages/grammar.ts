@@ -27,7 +27,6 @@ export async function wireLanguageTmGrammars() {
     const registry = new monacoTextMate.Registry({
         getGrammarDefinition: async scopeName => {
             const languageId = grammarsMap.get(scopeName)
-            console.log(languageId)
             switch (languageId) {
                 case undefined: {
                     throw new Error("unknown language: " + scopeName)

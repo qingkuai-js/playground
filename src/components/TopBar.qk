@@ -11,7 +11,7 @@
     }
 
     function handleChangeCompileOptions(key: "comment" | "debug", value: boolean) {
-        ;(store[key] = value), refreshCompiledCode(false)
+        ;((store[key] = value), refreshCompiledCode(false))
     }
 </lang-ts>
 
@@ -29,12 +29,12 @@
         <Switch
             label="debug"
             &checked={store.debug}
-            @change={v => handleChangeCompileOptions("debug", v)}
+            @change={(v: boolean) => handleChangeCompileOptions("debug", v)}
         />
         <Switch
             label="comment"
             &checked={store.comment}
-            @change={v => handleChangeCompileOptions("comment", v)}
+            @change={(v: boolean) => handleChangeCompileOptions("comment", v)}
         />
         <VersionSelector package="typescript" />
         <VersionSelector package="qingkuai" />

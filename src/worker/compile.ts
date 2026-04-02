@@ -1,12 +1,7 @@
-import {
-    PositionFlag,
-    type ASTLocation,
-    type ASTPositionWithFlag,
-    type CompileIntermediateResult as OriginalCompileResult
-} from "qingkuai/compiler"
 import type { Model } from "../types/communication"
 import type { RuntimeCompileResult } from "../types/common"
 import type { CompileResult } from "qingkuai-language-service"
+import type { ASTLocation, ASTPositionWithFlag, CompileIntermediateResult } from "qingkuai/compiler"
 
 import {
     ts,
@@ -15,8 +10,8 @@ import {
     setState,
     updateFile,
     projectKind,
-    interCompileCache,
     qingkuaiCompiler,
+    interCompileCache,
     prettierAndPlugins
 } from "./state"
 import { pathImplementation } from "./mock"
@@ -99,7 +94,7 @@ export function compileToInterCode({ uri, version, source }: Model) {
         return cached
     }
 
-    let cr: OriginalCompileResult
+    let cr: CompileIntermediateResult
     if (isQingkuaiFile(uri)) {
         cr = qingkuaiCompiler.compileIntermediate(source, {
             typeDeclarationFilePath: adapter.typeDeclarationFilePath
@@ -179,7 +174,7 @@ function getConfig(filePath: string) {
     } satisfies CompileResult["config"]
 }
 
-function mockCompileNonQingkuaiFile({ source, uri }: Model): OriginalCompileResult {
+function mockCompileNonQingkuaiFile({ source, uri }: Model): CompileIntermediateResult {
     const positions: ASTPositionWithFlag[] = []
     const extension = pathImplementation.ext(uri).slice(1)
     const isCss = extension === "css"
@@ -189,7 +184,7 @@ function mockCompileNonQingkuaiFile({ source, uri }: Model): OriginalCompileResu
             line,
             column,
             index: i,
-            flag: isCss ? PositionFlag.InStyle : PositionFlag.InScript
+            flag: qingkuaiCompiler.PositionFlag[isCss ? "InStyle" : "InScript"]
         })
         source[i] === "\n" ? (line++, (column = 0)) : column++
     }
@@ -239,7 +234,7 @@ function mockCompileNonQingkuaiFile({ source, uri }: Model): OriginalCompileResu
         getSlotTemplateNode: () => 0 as any,
         getTemplateNodeContext: () => 0 as any,
         isPositionFlagSetAtIndex: (flag, index) => !!(flag & positions[index].flag)
-    } satisfies OriginalCompileResult
+    } satisfies CompileIntermediateResult
 }
 function addScopeToSelectors(css: string, hash: string): string {
     const ast = csstree.parse(css)
@@ -258,8 +253,8 @@ function addScopeToSelectors(css: string, hash: string): string {
     }
     csstree.walk(ast, {
         visit: "Rule",
-        enter(node) {
-            if (node.prelude.type !== "SelectorList" || this.atrule?.name === "keyframes") {
+        enter(node: csstree.Rule) {
+            if (node.prelude.type !== "SelectorList" || (this as csstree.WalkContext).atrule?.name === "keyframes") {
                 return
             }
             for (const selector of node.prelude.children.toArray()) {
@@ -269,7 +264,7 @@ function addScopeToSelectors(css: string, hash: string): string {
 
                 let hasBeenScoped = false
                 const hasScopeAttribute = !!selector.children.toArray().find(isScopeAttribute)
-                selector.children.forEachRight((node, item) => {
+                selector.children.forEachRight((node: csstree.CssNode, item: csstree.ListItem<csstree.CssNode>) => {
                     if (isScopeAttribute(node)) {
                         selector.children.replace(item, selector.children.createItem(hashAttribute))
                     }

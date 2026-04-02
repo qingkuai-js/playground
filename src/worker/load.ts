@@ -11,7 +11,7 @@ import {
 } from "../util/loadpkg"
 import { isQingkuaiFile } from "../util/assert"
 import { fsImplementation, pathImplementation } from "./mock"
-import { interCompileCache, fsMap, setState, handlerResolver, scriptVersion, projectKind } from "./state"
+import { interCompileCache, fsMap, setState, handlerResolver, scriptVersion } from "./state"
 import { Handlers, qingkuaiRuntimeDtsPath, typeDeclarationFilePath } from "../util/constants"
 import { createDefaultMapFromCDN, createSystem, createVirtualLanguageServiceHost } from "@typescript/vfs"
 
@@ -110,24 +110,28 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
         return sourceFile
     }
 
-    // 加载qingkuai/runtime类型定义文件
+    // 加载 qingkuai/runtime 类型定义文件
     const qingkuaiRuntimeDtsRes = await fetch(
         `https://unpkg.com/qingkuai@${qingkuaiVersion}/dist/types/runtime/index.d.ts`
     )
     const qingkuaiRuntimeDtsContent = await qingkuaiRuntimeDtsRes.text()
-    fsMap.set(qingkuaiRuntimeDtsPath, qingkuaiRuntimeDtsContent)
     self.postMessage({
         name: Handlers.FileLoaded,
         fileName: qingkuaiRuntimeDtsPath,
         content: qingkuaiRuntimeDtsContent
     })
+    fsMap.set(qingkuaiRuntimeDtsPath, qingkuaiRuntimeDtsContent)
 
     // 使用@typescript/vsf从cdn加载需要的lib类型声明文件并存入fsMap
     ;(await createDefaultMapFromCDN(compilerOptions, ts.version, false, ts)).forEach((content, fileName) => {
         if (!content.startsWith("Couldn't find")) {
             const libFileName = `/node_modules/typescript/lib${fileName}`
+            self.postMessage({
+                content,
+                fileName: libFileName,
+                name: Handlers.FileLoaded
+            })
             fsMap.set(libFileName, content)
-            self.postMessage({ name: Handlers.FileLoaded, content, fileName: libFileName })
         }
     })
 
@@ -158,6 +162,7 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
         fsImplementation,
         pathImplementation,
         typeDeclarationFilePath,
+        path => interCompileCache.get(path)!,
         tsProjectService,
         () => qingkuaiConfig,
         (fileInfo, newContent) => {
