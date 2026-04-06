@@ -123,7 +123,7 @@ export function compileToInterCode({ uri, version, source }: Model) {
             if (typeof startOrLoc === "number") {
                 return {
                     start: document.positionAt(startOrLoc),
-                    end: document.positionAt(end ?? startOrLoc + 1)
+                    end: document.positionAt(end ?? startOrLoc)
                 }
             }
             return {

@@ -32,6 +32,7 @@ const {
     findReferences,
     findDefinitions,
     resolveCodeLens,
+    getSignatureHelp,
     getDocumentColors,
     findImplementations,
     getColorPresentations,
@@ -90,11 +91,14 @@ self.onmessage = async ({ data: { id, name, arg } }: { data: WorkerHandlerBasePa
         case Handlers.FindImplementations: {
             return response(await _findImplementations(arg.model, arg.offset))
         }
+        case Handlers.GetColorPresentations: {
+            return response(_getColorPresentations(arg.model, arg.range, arg.color))
+        }
         case Handlers.GetCompileResult: {
             return response(await _getCompileResult(arg.model, arg.debug, arg.comment))
         }
-        case Handlers.GetColorPresentations: {
-            return response(await _getColorPresentations(arg.model, arg.range, arg.color))
+        case Handlers.GetSignatureHelp: {
+            return response(await _getSignatureHelp(arg.model, arg.offset, arg.context))
         }
         case Handlers.GetCompletions: {
             return response(await _doComplete(arg.model, arg.offset, arg.triggerKind, arg.triggerCharacter))
@@ -212,6 +216,18 @@ async function _doComplete(model: Model, offset: number, triggerKind: number, tr
         },
         triggerKind as any
     )
+}
+
+async function _getSignatureHelp(model: Model, offset: number, context: Monaco.languages.SignatureHelpContext) {
+    const cr = compileToInterCode(model)
+    return await getSignatureHelp(cr, offset, context as any, (fileName, pos, isRetrigger, triggerCharacter) => {
+        return adapter.service.getSignatureHelp({
+            pos,
+            fileName,
+            isRetrigger,
+            triggerCharacter
+        })
+    })
 }
 
 async function _resolveCompletionItem(item: MonacoCompletionItemWithOriginal) {

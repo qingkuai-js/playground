@@ -119,6 +119,10 @@ export default class {
         return ((await this.request(Handlers.FormatDocument, model)) ?? []).map(convertTextEdit)
     }
 
+    public async getSignatureHelp(model: Model, offset: number, context: Monaco.languages.SignatureHelpContext) {
+        return await this.request(Handlers.GetSignatureHelp, { model, offset, context })
+    }
+
     public async getDocumentColors(model: Model) {
         return convertDocumentColors(await this.request(Handlers.GetDocumentColors, model))
     }

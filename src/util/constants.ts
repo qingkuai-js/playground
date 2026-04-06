@@ -29,6 +29,7 @@ export enum Handlers {
     ResolveCodeLens = "resolveCodeLens",
     FindDefinitions = "findDefinitions",
     GetCompileResult = "getCompileResult",
+    GetSignatureHelp = "getSignatureHelp",
     GetDocumentColors = "getDocumentColors",
     FindImplementations = "findImplementations",
     LoadCore = "loadTypescriptAndQingkuaiCompiler",

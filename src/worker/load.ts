@@ -11,7 +11,7 @@ import {
 } from "../util/loadpkg"
 import { isQingkuaiFile } from "../util/assert"
 import { fsImplementation, pathImplementation } from "./mock"
-import { interCompileCache, fsMap, setState, handlerResolver, scriptVersion } from "./state"
+import { interCompileCache, fsMap, setState, handlerResolver, scriptVersion, logger } from "./state"
 import { Handlers, qingkuaiRuntimeDtsPath, typeDeclarationFilePath } from "../util/constants"
 import { createDefaultMapFromCDN, createSystem, createVirtualLanguageServiceHost } from "@typescript/vfs"
 
@@ -100,9 +100,9 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
         trimTrailingWhitespace: true
     }
 
-    const ensureGetSourceFile = (fileName: string) => {
+    const ensureGetSourceFile = (fileName: string, update = false) => {
         const existing = tsLanguageService.getProgram()!.getSourceFile(fileName)
-        if (existing) {
+        if (existing && !update) {
             return existing
         }
         const sourceFile = ts.createSourceFile(fileName, fsMap.get(fileName)!, ts.ScriptTarget.ESNext)
@@ -159,6 +159,7 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
 
     const adapter = new TypescriptAdapter(
         ts,
+        logger,
         fsImplementation,
         pathImplementation,
         typeDeclarationFilePath,
@@ -178,13 +179,10 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
 
     const updateSourceFile = (fileName: string) => {
         const cr = interCompileCache.get(fileName)!
-        const sourceFile = ensureGetSourceFile(fileName)
+        const sourceFile = ensureGetSourceFile(fileName, true)
         const version = scriptVersion.get(fileName) ?? 0
 
         if (isQingkuaiFile(fileName)) {
-            const exportValueSourceRange: NumNum | undefined = cr.scriptDescriptor
-                ? [cr.scriptDescriptor.startTagOpenRange[0] + 1, cr.scriptDescriptor.startTagOpenRange[1]]
-                : undefined
             const fileInfo = new QingkuaiFileInfo(
                 cr.code,
                 cr.scriptDescriptor.isTS,
@@ -192,7 +190,6 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
                 adapter.getNormalizedPath(fileName),
                 cr.getTypeDelayInterIndexes,
                 cr.identifierStatusInfo,
-                exportValueSourceRange,
                 adapter,
                 cr.indexMap.itos,
                 cr.indexMap.stoi,

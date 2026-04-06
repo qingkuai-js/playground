@@ -59,6 +59,31 @@ export function registerQingkuaiProviders() {
         }
     })
 
+    monaco.languages.registerSignatureHelpProvider(languageSelector, {
+        signatureHelpTriggerCharacters: qingkuaiLanguageService.SIGNATURE_TRIGGER_CHARS,
+        signatureHelpRetriggerCharacters: qingkuaiLanguageService.SIGNATURE_RETRIGGER_CHARS,
+
+        async provideSignatureHelp(model, position, token, context) {
+            if (token.isCancellationRequested || isExternalFile(model)) {
+                return null
+            }
+
+            const ret = await languageWorker.getSignatureHelp(
+                getClonableModel(model),
+                model.getOffsetAt(position),
+                context
+            )
+            return {
+                value: ret ?? {
+                    signatures: [],
+                    activeParameter: 0,
+                    activeSignature: 0
+                },
+                dispose() {}
+            }
+        }
+    })
+
     monaco.languages.registerRenameProvider(languageSelector, {
         async resolveRenameLocation(model, position, token) {
             if (token.isCancellationRequested || isExternalFile(model)) {

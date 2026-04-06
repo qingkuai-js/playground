@@ -2,7 +2,7 @@ import type TS from "typescript"
 import type { SetStateOptions } from "../types/worker"
 import type { QingkuaiCompiler } from "../types/common"
 import type { TypescriptAdapter } from "qingkuai-language-service/adapters"
-import type { CompileResult, ComponentAttributeItem, PrettierAndPlugins } from "qingkuai-language-service"
+import type { CompileResult, ComponentAttributeItem, PrettierAndPlugins, Logger } from "qingkuai-language-service"
 
 import { qingkuaiLanguageService } from "../util/loadpkg"
 import { Handlers, qingkuaiRuntimeDtsPath, typeDeclarationFilePath } from "../util/constants"
@@ -19,6 +19,13 @@ export let qingkuaiCompiler: typeof QingkuaiCompiler
 export let tsLanguageServiceHost: TS.LanguageServiceHost
 export let projectKind = qingkuaiLanguageService.ProjectKind.JS
 export let [handlerPms, handlerResolver] = qingkuaiLanguageService.util.generatePromiseAndResolver()
+
+export const logger = qingkuaiLanguageService.createLogger({
+    write(msg) {
+        console.log(msg)
+    },
+    prefix: "[Qingkuai Playground Worker]: "
+})
 
 export const fsMap = new Map<string, string>()
 export const scriptVersion = new Map<string, number>()
@@ -55,15 +62,14 @@ export function setState(options: SetStateOptions) {
     }
     if (options.adapter) {
         const content = qingkuaiLanguageService.qingkuaiTypeDeclaration.replace(
-            'from "qingkuai"',
-            `from "${qingkuaiRuntimeDtsPath}"`
+            'import("qingkuai")',
+            `import("${qingkuaiRuntimeDtsPath}")`
         )
         self.postMessage({
             content,
             name: Handlers.FileLoaded,
             fileName: typeDeclarationFilePath
         })
-        console.log(content)
         adapter = options.adapter
         fsMap.set(typeDeclarationFilePath, content)
     }
