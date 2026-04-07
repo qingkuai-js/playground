@@ -97,7 +97,7 @@ export function compileToInterCode({ uri, version, source }: Model) {
     let cr: CompileIntermediateResult
     if (isQingkuaiFile(uri)) {
         cr = qingkuaiCompiler.compileIntermediate(source, {
-            typeDeclarationFilePath: adapter.typeDeclarationFilePath
+            shorthandDerivedDeclaration: true
         })
     } else {
         cr = mockCompileNonQingkuaiFile({ uri, version, source })

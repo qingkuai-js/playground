@@ -1,6 +1,5 @@
 import TS from "typescript"
 
-import type { NumNum } from "../types/common"
 import type { AdapterTsProject, AdapterTsProjectService, TsPluginQingkuaiConfig } from "qingkuai-language-service"
 
 import {
@@ -11,8 +10,8 @@ import {
 } from "../util/loadpkg"
 import { isQingkuaiFile } from "../util/assert"
 import { fsImplementation, pathImplementation } from "./mock"
+import { Handlers, qingkuaiLsDtsPath, qingkuaiRuntimeDtsPath } from "../util/constants"
 import { interCompileCache, fsMap, setState, handlerResolver, scriptVersion, logger } from "./state"
-import { Handlers, qingkuaiRuntimeDtsPath, typeDeclarationFilePath } from "../util/constants"
 import { createDefaultMapFromCDN, createSystem, createVirtualLanguageServiceHost } from "@typescript/vfs"
 
 const { TypescriptAdapter, QingkuaiFileInfo } = qingkuaiLanguageServiceAdapter
@@ -64,7 +63,8 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
         module: ts.ModuleKind.ESNext,
         allowNonTsExtensions: true,
         paths: {
-            qingkuai: [qingkuaiRuntimeDtsPath]
+            qingkuai: [qingkuaiRuntimeDtsPath],
+            "qingkuai/language-service": [qingkuaiLsDtsPath]
         },
         allowImportingTsExtensions: true,
         moduleResolution: ts.ModuleResolutionKind.Bundler
@@ -114,12 +114,22 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
     const qingkuaiRuntimeDtsRes = await fetch(
         `https://unpkg.com/qingkuai@${qingkuaiVersion}/dist/types/runtime/index.d.ts`
     )
+    const qingkuaiLsDtsRes = await fetch(
+        `https://unpkg.com/qingkuai@${qingkuaiVersion}/dist/types/language-service/qingkuai.d.ts`
+    )
+    const qingkuaiLsDtsContent = await qingkuaiLsDtsRes.text()
     const qingkuaiRuntimeDtsContent = await qingkuaiRuntimeDtsRes.text()
     self.postMessage({
         name: Handlers.FileLoaded,
         fileName: qingkuaiRuntimeDtsPath,
         content: qingkuaiRuntimeDtsContent
     })
+    self.postMessage({
+        name: Handlers.FileLoaded,
+        fileName: qingkuaiLsDtsPath,
+        content: qingkuaiLsDtsContent
+    })
+    fsMap.set(qingkuaiLsDtsPath, qingkuaiLsDtsContent)
     fsMap.set(qingkuaiRuntimeDtsPath, qingkuaiRuntimeDtsContent)
 
     // 使用@typescript/vsf从cdn加载需要的lib类型声明文件并存入fsMap
@@ -162,7 +172,6 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
         logger,
         fsImplementation,
         pathImplementation,
-        typeDeclarationFilePath,
         path => interCompileCache.get(path)!,
         tsProjectService,
         () => qingkuaiConfig,

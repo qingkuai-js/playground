@@ -90,4 +90,4 @@ export const tsVersionsPms = listVersions("typescript")
 export const qingkuaiVersionsPms = listVersions("qingkuai")
 export const externalFileRE = /^\/(?:node_modules|compiled)/
 export const qingkuaiRuntimeDtsPath = "/node_modules/qingkuai/dist/runtime/index.d.ts"
-export const typeDeclarationFilePath = "/node_modules/.vscode/extensions/qingkuai-language-features/qingkuai.d.ts"
+export const qingkuaiLsDtsPath = "/node_modules/qingkuai/dist/types/language-service/qingkuai.d.ts"
