@@ -68,7 +68,9 @@ const config: Monaco.languages.LanguageConfiguration = {
         increaseIndentPattern: new RegExp("(^.*\\{[^}]*$)"),
         decreaseIndentPattern: new RegExp("^\\s*\\}")
     },
-    wordPattern: new RegExp("(#?-?\\d*\\.\\d\\w*%?)|(::?[\\w-]*(?=[^,{;]*[,{]))|(([@#.!])?[\\w-?]+%?|[@#!.])")
+    wordPattern: new RegExp(
+        "(#?-?\\d*\\.\\d\\w*%?)|(::?[\\w-]*(?=[^,{;]*[,{]))|(([@#.!])?[\\w-?]+%?|[@#!.])"
+    )
 }
 
 export default config

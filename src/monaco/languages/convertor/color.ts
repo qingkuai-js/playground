@@ -8,7 +8,7 @@ export function convertDocumentColors(
     if (!from) {
         return null
     }
-    return from.map(item => {
+    return from.map((item) => {
         return {
             range: convertRange(item.range),
             color: item.color
@@ -22,11 +22,12 @@ export function convertColorPresentations(
     if (!from) {
         return null
     }
-    return from.map(item => {
+    return from.map((item) => {
         return {
             label: item.label,
             textEdit: item.textEdit && convertTextEdit(item.textEdit),
-            additionalTextEdits: item.additionalTextEdits && item.additionalTextEdits.map(convertTextEdit)
+            additionalTextEdits:
+                item.additionalTextEdits && item.additionalTextEdits.map(convertTextEdit)
         }
     })
 }

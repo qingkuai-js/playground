@@ -16,14 +16,16 @@ export function convertCodeLens(from: CodeLens): Monaco.languages.CodeLens {
     }
 }
 
-export function convertCodeLensList(from: CodeLens[] | null): MonacoCodeLensListWithOriginal | null {
+export function convertCodeLensList(
+    from: CodeLens[] | null
+): MonacoCodeLensListWithOriginal | null {
     if (!from) {
         return null
     }
 
     return {
         dispose: () => {},
-        lenses: from.map(item => {
+        lenses: from.map((item) => {
             return {
                 _ori: item,
                 range: convertRange(item.range)

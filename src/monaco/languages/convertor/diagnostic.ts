@@ -2,11 +2,13 @@ import { convertRange } from "./struct"
 import * as monaco from "monaco-editor-core"
 import { vscodeLanguageServerTypes as lst } from "../../../util/loadpkg"
 
-export function convertDiagnostic(from: lst.Diagnostic[] | null): monaco.editor.IMarkerData[] | null {
+export function convertDiagnostic(
+    from: lst.Diagnostic[] | null
+): monaco.editor.IMarkerData[] | null {
     if (!from) {
         return null
     }
-    return from.map(item => {
+    return from.map((item) => {
         return {
             ...convertRange(item.range),
             source: item.source,
@@ -41,7 +43,9 @@ function convertDiagnosticServerity(from: lst.DiagnosticSeverity): monaco.Marker
     }
 }
 
-function convertRelatedInformations(from: lst.DiagnosticRelatedInformation): monaco.editor.IRelatedInformation {
+function convertRelatedInformations(
+    from: lst.DiagnosticRelatedInformation
+): monaco.editor.IRelatedInformation {
     return {
         message: from.message,
         ...convertRange(from.location.range),

@@ -12,13 +12,17 @@ export function convertLocations(
     return from.map(convertLocationItem)
 }
 
- function convertLocationItem(from: Location | LocationLink): monaco.languages.Location | monaco.languages.LocationLink {
+function convertLocationItem(
+    from: Location | LocationLink
+): monaco.languages.Location | monaco.languages.LocationLink {
     if ("targetUri" in from) {
         return {
             uri: monaco.Uri.parse(from.targetUri),
             range: convertRange(from.targetRange),
-            targetSelectionRange: from.targetSelectionRange && convertRange(from.targetSelectionRange),
-            originSelectionRange: from.originSelectionRange && convertRange(from.originSelectionRange)
+            targetSelectionRange:
+                from.targetSelectionRange && convertRange(from.targetSelectionRange),
+            originSelectionRange:
+                from.originSelectionRange && convertRange(from.originSelectionRange)
         }
     }
     return {

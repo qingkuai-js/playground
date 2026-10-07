@@ -4,7 +4,7 @@ import { TextDocument } from "vscode-languageserver-textdocument"
 import { fsMap } from "./state"
 import { getLineStarts } from "../util/sundary"
 
-export const fsImplementation: AdapterFS = {
+export const FS_IMPLEMENTATION: AdapterFS = {
     exist(path) {
         return fsMap.has(path)
     },
@@ -13,7 +13,7 @@ export const fsImplementation: AdapterFS = {
     }
 }
 
-export const pathImplementation: AdapterPath = {
+export const PATH_IMPLEMENTATION: AdapterPath = {
     resolve(...segments) {
         const resultParts: string[] = []
 

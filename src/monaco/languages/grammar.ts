@@ -7,13 +7,13 @@ import {
     monacoEditorTextMate,
     qingkuaiEmmetGrammar
 } from "../../util/loadpkg"
-import { languages } from "./configurations"
+import { LANGUAGES } from "./configurations"
 import { leftEditor } from "../../util/state"
 
 export async function wireLanguageTmGrammars() {
     const grammars = new Map<string, string>()
     const grammarsMap = new Map<string, string>()
-    for (const { id, scope, configuration } of languages) {
+    for (const { id, scope, configuration } of LANGUAGES) {
         grammars.set(id, scope)
         grammarsMap.set(scope, id)
         monaco.languages.register({ id })
@@ -25,7 +25,7 @@ export async function wireLanguageTmGrammars() {
     await onigasm.loadWASM("/lib/onigasm.wasm")
 
     const registry = new monacoTextMate.Registry({
-        getGrammarDefinition: async scopeName => {
+        getGrammarDefinition: async (scopeName) => {
             const languageId = grammarsMap.get(scopeName)
             switch (languageId) {
                 case undefined: {
@@ -46,7 +46,9 @@ export async function wireLanguageTmGrammars() {
                 default: {
                     return {
                         format: "json",
-                        content: await (await fetch(`/grammars/${languageId}.tmLanguage.json`)).text()
+                        content: await (
+                            await fetch(`/grammars/${languageId}.tmLanguage.json`)
+                        ).text()
                     }
                 }
             }
@@ -61,7 +63,7 @@ function stripNotSupportedLangs(grammar: any) {
     return JSON.stringify(grammar).replace(
         /"include":\s?"source\.(?:css\.)?(sass|scss|less|stylus|postcss|js)"/g,
         (_, g) => {
-            if(g === "js"){
+            if (g === "js") {
                 return '"include":"source.ts"'
             }
             return '"include":"source.css"'

@@ -27,5 +27,6 @@ export interface Store {
         left: MessageBoxProps
         right: MessageBoxProps
     }
+    theme: "dark" | "light"
     showingExternalSingleDefinition: boolean
 }

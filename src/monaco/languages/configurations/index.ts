@@ -4,7 +4,7 @@ import cssLangConfig from "./css"
 import qingkuaiLangConfig from "./qingkuai"
 import typescriptLangConfig from "./typescript"
 
-export const languages: LanguageItem[] = [
+export const LANGUAGES: LanguageItem[] = [
     {
         id: "ts",
         scope: "source.ts"

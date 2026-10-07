@@ -1,5 +1,5 @@
 import type Monaco from "monaco-editor-core"
-import { externalFileRE } from "./constants"
+import { EXTERNAL_FILE_RE } from "./constants"
 
 export function isArray(v: any): v is any[] {
     return Array.isArray(v)
@@ -18,9 +18,9 @@ export function isUndefined(v: any): v is undefined {
 }
 
 export function isExternalFileName(fileName: string) {
-    return externalFileRE.test(fileName)
+    return EXTERNAL_FILE_RE.test(fileName)
 }
 
 export function isExternalFile(model: Monaco.editor.ITextModel) {
-    return externalFileRE.test(model.uri.fsPath)
+    return EXTERNAL_FILE_RE.test(model.uri.fsPath)
 }

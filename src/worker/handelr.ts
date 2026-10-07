@@ -3,11 +3,15 @@ import type { Color } from "vscode-languageserver-types"
 import type { MessageBoxProps } from "../types/component"
 import type { InsertSnippetParams } from "qingkuai-language-service"
 import type { Model, WorkerHandlerBaseParam } from "../types/communication"
-import type { MonacoCodeLensItemWithOriginal, MonacoCompletionItemWithOriginal } from "../types/monaco"
+import type {
+    MonacoCodeLensItemWithOriginal,
+    MonacoCompletionItemWithOriginal
+} from "../types/monaco"
 
 import {
     fsMap,
     adapter,
+    cssSourceMap,
     handlerPms,
     deleteFile,
     projectKind,
@@ -15,6 +19,7 @@ import {
     scriptVersion,
     prettierAndPlugins
 } from "./state"
+import { PATH_IMPLEMENTATION } from "./mock"
 import { Handlers } from "../util/constants"
 import { qingkuaiLanguageService } from "../util/loadpkg"
 import { isQingkuaiFile, isString } from "../util/assert"
@@ -29,12 +34,14 @@ const {
     getCodeLens,
     prepareRename,
     getDiagnostic,
+    getInlayHint,
     findReferences,
     findDefinitions,
     resolveCodeLens,
     getSignatureHelp,
     getDocumentColors,
     findImplementations,
+    findTypeDefinitions,
     getColorPresentations,
     resolveScriptBlockCompletion
 } = qingkuaiLanguageService
@@ -44,9 +51,29 @@ self.onmessage = async ({ data: { id, name, arg } }: { data: WorkerHandlerBasePa
         self.postMessage({ id, name, arg })
     }
 
+    try {
+        await handleWorkerMessage({ id, name, arg }, response)
+    } catch (e: any) {
+        // 临时排障通道：worker 内的异常不会冒泡到页面控制台，先原样回传
+        self.postMessage({
+            id,
+            name,
+            arg: null,
+            error: (e?.stack ?? String(e)).slice(0, 800)
+        })
+    }
+}
+
+async function handleWorkerMessage(
+    { name, arg }: WorkerHandlerBaseParam,
+    response: (arg: any) => void
+) {
     // 等待typescript语言服务创建完成
     if (name === Handlers.LoadCore) {
-        return await loadTypescriptAndQingkuaiCompiler(arg.tsVersion, arg.qingkuaiVersion), response(null)
+        return (
+            await loadTypescriptAndQingkuaiCompiler(arg.tsVersion, arg.qingkuaiVersion),
+            response(null)
+        )
     }
     if (handlerPms.state === "pending") {
         await handlerPms
@@ -85,6 +112,12 @@ self.onmessage = async ({ data: { id, name, arg } }: { data: WorkerHandlerBasePa
         case Handlers.FindDefinitions: {
             return response(await _findDefinitions(arg.model, arg.offset))
         }
+        case Handlers.FindTypeDefinitions: {
+            return response(await _findTypeDefinitions(arg.model, arg.offset))
+        }
+        case Handlers.GetInlayHints: {
+            return response(await _getInlayHints(arg.model))
+        }
         case Handlers.Rename: {
             return response(await _rename(arg.model, arg.offset, arg.newName))
         }
@@ -101,14 +134,21 @@ self.onmessage = async ({ data: { id, name, arg } }: { data: WorkerHandlerBasePa
             return response(await _getSignatureHelp(arg.model, arg.offset, arg.context))
         }
         case Handlers.GetCompletions: {
-            return response(await _doComplete(arg.model, arg.offset, arg.triggerKind, arg.triggerCharacter))
+            return response(
+                await _doComplete(arg.model, arg.offset, arg.triggerKind, arg.triggerCharacter)
+            )
         }
     }
+}
+
+function isCssFile(uri: string) {
+    return PATH_IMPLEMENTATION.ext(uri) === ".css"
 }
 
 async function _deleteFile(fileName: string) {
     deleteFile(fileName)
     fsMap.delete(fileName)
+    cssSourceMap.delete(fileName)
     interCompileCache.delete(fileName)
     scriptVersion.delete(fileName)
 }
@@ -118,9 +158,12 @@ async function _getCompileResult(model: Model, debug: boolean, comment: boolean)
 }
 
 async function _codeLens(model: Model) {
+    if ((compileToInterCode(model), isCssFile(model.uri))) {
+        return []
+    }
     return await getCodeLens(
         compileToInterCode(model),
-        fileName => {
+        (fileName) => {
             return adapter.service.getNavigationTree(fileName)
         },
         () => {
@@ -181,11 +224,15 @@ async function _doHover(model: Model, offset: number) {
 }
 
 async function _getDiagnostics(model: Model) {
+    if ((compileToInterCode(model), isCssFile(model.uri))) {
+        return []
+    }
+
     const cr = compileToInterCode(model)
-    const ret = await getDiagnostic(cr, fileName => {
+    const ret = await getDiagnostic(cr, (fileName) => {
         return adapter.service.getDiagnostics(fileName)
     })
-    cr.styleDescriptors.forEach(item => {
+    cr.styleDescriptors.forEach((item) => {
         if (item.lang !== "css") {
             ret.push({
                 message: `The ${item.lang} pre-processor is not supported in playground for the moment.`,
@@ -196,7 +243,12 @@ async function _getDiagnostics(model: Model) {
     return ret
 }
 
-async function _doComplete(model: Model, offset: number, triggerKind: number, triggerCharacter: string) {
+async function _doComplete(
+    model: Model,
+    offset: number,
+    triggerKind: number,
+    triggerCharacter: string
+) {
     const cr = compileToInterCode(model)
     return await doComplete(
         cr,
@@ -218,20 +270,29 @@ async function _doComplete(model: Model, offset: number, triggerKind: number, tr
     )
 }
 
-async function _getSignatureHelp(model: Model, offset: number, context: Monaco.languages.SignatureHelpContext) {
+async function _getSignatureHelp(
+    model: Model,
+    offset: number,
+    context: Monaco.languages.SignatureHelpContext
+) {
     const cr = compileToInterCode(model)
-    return await getSignatureHelp(cr, offset, context as any, (fileName, pos, isRetrigger, triggerCharacter) => {
-        return adapter.service.getSignatureHelp({
-            pos,
-            fileName,
-            isRetrigger,
-            triggerCharacter
-        })
-    })
+    return await getSignatureHelp(
+        cr,
+        offset,
+        context as any,
+        (fileName, pos, isRetrigger, triggerCharacter) => {
+            return adapter.service.getSignatureHelp({
+                pos,
+                fileName,
+                isRetrigger,
+                triggerCharacter
+            })
+        }
+    )
 }
 
 async function _resolveCompletionItem(item: MonacoCompletionItemWithOriginal) {
-    return resolveScriptBlockCompletion(item._ori, getInterCompileResultByPath, item =>
+    return resolveScriptBlockCompletion(item._ori, getInterCompileResultByPath, (item) =>
         adapter.service.getCompletionDetail(item.data)
     )
 }
@@ -246,12 +307,18 @@ async function _prepareRename(model: Model, offset: number) {
 }
 
 async function _rename(model: Model, offset: number, newName: string) {
-    return await rename(compileToInterCode(model), offset, newName, getInterCompileResultByPath, (fileName, pos) => {
-        return adapter.service.getRenameLocations({
-            pos,
-            fileName
-        })
-    })
+    return await rename(
+        compileToInterCode(model),
+        offset,
+        newName,
+        getInterCompileResultByPath,
+        (fileName, pos) => {
+            return adapter.service.getRenameLocations({
+                pos,
+                fileName
+            })
+        }
+    )
 }
 
 async function _formatDocument(model: Model) {
@@ -271,15 +338,35 @@ async function _formatDocument(model: Model) {
             }
         ]
     }
-    return await format(prettierAndPlugins, compileToInterCode(model), msg => _showMessage("error", msg))
+    return await format(prettierAndPlugins, compileToInterCode(model), (msg) =>
+        _showMessage("error", msg)
+    )
 }
 
 async function _findDefinitions(model: Model, offset: number) {
-    return await findDefinitions(compileToInterCode(model), offset, (cr, pos) => {
+    return await findDefinitions(compileToInterCode(model), offset, _resolveFilePath, (cr, pos) => {
         return adapter.service.getDefinitions({
             pos,
             fileName: cr.filePath
         })
+    })
+}
+
+async function _findTypeDefinitions(model: Model, offset: number) {
+    return await findTypeDefinitions(compileToInterCode(model), offset, (fileName, pos) => {
+        return adapter.service.getTypeDefinitions({
+            pos,
+            fileName
+        })
+    })
+}
+
+async function _getInlayHints(model: Model) {
+    if ((compileToInterCode(model), isCssFile(model.uri))) {
+        return []
+    }
+    return await getInlayHint(compileToInterCode(model), (fileName) => {
+        return adapter.service.getInlayHints(fileName)
     })
 }
 
@@ -326,9 +413,20 @@ function _getColorPresentations(model: Model, range: Monaco.IRange, color: Color
     return getColorPresentations(
         compileToInterCode(model),
         {
-            end: { line: range.endLineNumber - 1, character: range.endColumn - 1 },
-            start: { line: range.startLineNumber - 1, character: range.startColumn - 1 }
+            end: {
+                line: range.endLineNumber - 1,
+                character: range.endColumn - 1
+            },
+            start: {
+                line: range.startLineNumber - 1,
+                character: range.startColumn - 1
+            }
         },
         color
     )
+}
+
+// 将模板中引用的相对路径解析为虚拟文件系统中的绝对路径
+function _resolveFilePath(cr: { filePath: string }, path: string) {
+    return PATH_IMPLEMENTATION.resolve(PATH_IMPLEMENTATION.dir(cr.filePath), path)
 }

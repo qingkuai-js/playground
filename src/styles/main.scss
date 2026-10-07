@@ -2,24 +2,78 @@
     margin: 0;
     padding: 0;
 
-    --top-bar-height: 40px;
+    --top-bar-height: 46px;
     --left-editor-width: 58%;
     --right-editor-width: 42%;
+    --radius-panel: 12px;
+    --radius-control: 8px;
+    --gap: 12px;
+}
 
-    --main-color: #2296f3;
-    --error-color: #ff0127;
-    --warning-color: #ffa400;
-    --error-color-bg: #ff002613;
-    --warning-color-bg: #ffa6000e;
-    --top-bar-font-color: #aaa;
-    --file-active-color: #f9e575;
-    --top-bar-active-font-color: #ddd;
+:root {
+    --bg: #000000;
+    --panel: #0a0a0a;
+    --panel-hover: #171717;
+    --line: #262626;
+    --line-soft: #1a1a1a;
+    --txt: #ededed;
+    --dim: #a1a1aa;
+    --faint: #63636b;
+    --accent: #ffffff;
+    --accent-contrast: #000000;
+    --accent-soft: #ffffff14;
+    --tab-hover-bg: #ffffff0f;
+    --tab-active-bg: #ffffff1f;
+    --tab-active-fg: #ededed;
+    --error-color: #f87171;
+    --error-color-bg: #180c0c;
+    --warning-color: #f5c086;
+    --warning-color-bg: #191108;
+    --mask: #00000088;
+    --shadow: 0 10px 30px #000000c4;
+}
+
+:root[data-theme="light"] {
+    --bg: #f6f8fa;
+    --panel: #ffffff;
+    --panel-hover: #f3f4f6;
+    --line: #d0d7de;
+    --line-soft: #eaeef2;
+    --txt: #1f2328;
+    --dim: #656d76;
+    --faint: #8c959f;
+    --accent: #0969da;
+    --accent-contrast: #ffffff;
+    --accent-soft: #ddf4ff;
+    --tab-hover-bg: #0969da12;
+    --tab-active-bg: #ddf4ff;
+    --tab-active-fg: #0969da;
+    --error-color: #cf222e;
+    --error-color-bg: #ffffff;
+    --warning-color: #9a6700;
+    --warning-color-bg: #fff8c5;
+    --mask: #1f232840;
+    --shadow: 0 10px 30px #8c959f40;
 }
 
 html {
     overflow: hidden;
-    background-color: #111;
+    background-color: var(--bg);
     font-family: "Menlo, Monaco, 'Courier New', monospace";
+    transition: background-color 0.25s ease;
+}
+
+body {
+    background-color: var(--bg);
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+    box-sizing: border-box;
+    height: 100vh;
+    padding: 12px 14px 14px;
 }
 
 button {
@@ -33,28 +87,4 @@ button {
     z-index: 10;
     width: 100vw;
     height: 100vh;
-}
-
-@font-face {
-    font-family: "JetBrains Mono";
-    src: url("../assets/JetBrainsMono-400.ttf") format("truetype");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "JetBrains Mono";
-    src: url("../assets/JetBrainsMono-500.ttf") format("truetype");
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "JetBrains Mono";
-    src: url("../assets/JetBrainsMono-600.ttf") format("truetype");
-    font-weight: 600;
-    font-style: normal;
-    font-display: swap;
 }

@@ -2,7 +2,12 @@ import type TS from "typescript"
 import type { SetStateOptions } from "../types/worker"
 import type { QingkuaiCompiler } from "../types/common"
 import type { TypescriptAdapter } from "qingkuai-language-service/adapters"
-import type { CompileResult, ComponentAttributeItem, PrettierAndPlugins, Logger } from "qingkuai-language-service"
+import type {
+    CompileResult,
+    ComponentAttributeItem,
+    PrettierAndPlugins,
+    Logger
+} from "qingkuai-language-service"
 
 import { qingkuaiLanguageService } from "../util/loadpkg"
 
@@ -27,6 +32,7 @@ export const logger = qingkuaiLanguageService.createLogger({
 })
 
 export const fsMap = new Map<string, string>()
+export const cssSourceMap = new Map<string, string>()
 export const scriptVersion = new Map<string, number>()
 export const interCompileCache = new Map<string, CompileResult>()
 export const componentAttributeInfos = new Map<string, ComponentAttributeItem[]>()

@@ -2,7 +2,6 @@
     import TopBar from "./TopBar"
     import MsgBox from "./MsgBox"
     import FileTab from "./FileTab"
-    import { onAfterMount } from "qingkuai"
     import { store, setState } from "../util/state"
     import { initializeMonacoEditor } from "../monaco/init"
 
@@ -14,25 +13,23 @@
     })
 
     const inPreview = derivedExp(store.rightFileTab.activeIndex === 0)
-    const editorOutterExtraClass = derivedExp(store.showingExternalSingleDefinition ? "hide-duplicate-definition" : "")
+    const editorOutterExtraClass = derivedExp(
+        store.showingExternalSingleDefinition ? "hide-duplicate-definition" : ""
+    )
 </lang-ts>
 
 <TopBar />
 <MsgBox />
-<div
-    class="editors"
-    !class={editorOutterExtraClass}
->
+<div class="editors" !class={editorOutterExtraClass}>
     <div class="left">
         <FileTab location="left" />
+        <div class="editor-host"></div>
     </div>
-    <div
-        class="right"
-        !class={{ "in-preview": inPreview }}
-    >
+    <div class="right" !class={{ "in-preview": inPreview }}>
         <FileTab location="right" />
+        <div class="editor-host"></div>
         <iframe
-            &dom={iframe}
+            &handle={iframe}
             !hidden={!inPreview}
             sandbox="allow-scripts allow-popups allow-forms allow-pointer-lock allow-modals allow-same-origin"
         >
@@ -40,45 +37,55 @@
         </iframe>
     </div>
 </div>
-<p
-    class="service-loading"
-    !hidden={!store.resolving}
->
-    Resolving the qingkuai and typescript langauge service...
+<p class="service-loading" !hidden={!store.resolving}>
+    Resolving the qingkuai and typescript language service...
 </p>
 
 <lang-scss>
     .editors {
         display: flex;
-        width: 100vw;
-        justify-content: space-between;
-        height: calc(100vh - var(--top-bar-height));
+        flex: 1;
+        width: 100%;
+        gap: var(--gap);
+        min-height: 0;
 
         .left,
         .right {
+            display: flex;
+            flex-direction: column;
             height: 100%;
-            border: 1px solid #111;
+            min-height: 0;
+            min-width: 0;
+            overflow: hidden;
+            box-sizing: border-box;
+            border-radius: var(--radius-panel);
+            border: 1px solid var(--line);
+            background-color: var(--panel);
+            transition:
+                background-color 0.25s ease,
+                border-color 0.25s ease;
         }
         .left {
             width: var(--left-editor-width);
         }
         .right {
             width: var(--right-editor-width);
-            border-left: none;
 
-            &.in-preview[qk-scope] {
-                background-color: white;
-
-                .monaco-editor {
-                    display: none;
-                }
+            &.in-preview[qk-scope] .editor-host {
+                display: none;
             }
 
             iframe {
+                flex: 1;
                 width: 100%;
-                height: 100%;
                 border: none;
+                background-color: var(--panel);
             }
+        }
+
+        .editor-host {
+            flex: 1;
+            min-height: 0;
         }
 
         &.hide-duplicate-definition[qk-scope] .monaco-list-row + .monaco-list-row {
@@ -86,16 +93,18 @@
         }
     }
     .service-loading {
-        box-sizing: border-box;
-        width: calc(var(--right-editor-width) - 20px);
         position: absolute;
-        right: 10px;
-        top: 80px;
-        color: #111;
-        font-size: 14px;
-        font-weight: bold;
-        padding: 5px 10px;
-        border-radius: 3px;
-        background-color: var(--warning-color);
+        right: 26px;
+        top: calc(var(--top-bar-height) + 70px);
+        z-index: 5;
+        color: var(--warning-color);
+        background-color: var(--warning-color-bg);
+        border: 1px solid var(--warning-color);
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        padding: 6px 16px;
+        box-shadow: var(--shadow);
     }
 </lang-scss>

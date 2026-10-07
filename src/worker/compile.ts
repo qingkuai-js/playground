@@ -10,17 +10,20 @@ import {
     setState,
     updateFile,
     projectKind,
+    cssSourceMap,
     qingkuaiCompiler,
     interCompileCache,
     prettierAndPlugins
 } from "./state"
-import { pathImplementation } from "./mock"
+import { PATH_IMPLEMENTATION } from "./mock"
 import { isQingkuaiFile } from "../util/assert"
 import { fileUriToPath } from "../util/sundary"
+import { STYLE_IMPORT_STATEMENT_RE } from "../util/constants"
 import { TextDocument } from "vscode-languageserver-textdocument"
-import { qingkuaiLanguageService, csstree } from "../util/loadpkg"
+import { qingkuaiLanguageService, csstree, localQingkuaiCompiler } from "../util/loadpkg"
 
 const runtimeCompileResultCache: Record<string, RuntimeCompileResult> = {}
+const runtimeStyleDeps: Record<string, Record<string, string | null>> = {}
 
 export function getInterCompileResultByPath(path: string) {
     return interCompileCache.get(path)!
@@ -35,7 +38,8 @@ export async function compileToRuntime({ uri, source }: Model, debug: boolean, c
     if (
         cached &&
         cached.source === source &&
-        (!targetIsQingkuaiFile || (cached.debug === debug && cached.comment === comment))
+        (!targetIsQingkuaiFile || (cached.debug === debug && cached.comment === comment)) &&
+        styleDepsUnchanged(filePath)
     ) {
         return cached
     }
@@ -50,12 +54,18 @@ export async function compileToRuntime({ uri, source }: Model, debug: boolean, c
                 debug,
                 sourcemap: false,
                 hashId: cached?.hashId,
-                interpretiveComments: comment,
-                shorthandDerivedDeclaration: true
+                interpretiveComments: comment
             })
-            const scopedStyleCodes = cr.styleDescriptors.map(item => {
-                return addScopeToSelectors(item.code, cr.hashId)
+            const styleDeps: Record<string, string | null> = {}
+            const scopedStyleCodes = cr.styleDescriptors.map((item) => {
+                const code = inlineStyleImports(
+                    item.code,
+                    PATH_IMPLEMENTATION.dir(filePath),
+                    styleDeps
+                )
+                return item.global ? code : addScopeToSelectors(code, cr.hashId)
             })
+            runtimeStyleDeps[filePath] = styleDeps
             runtimeCompileResultCache[filePath] = {
                 ...baseResult,
                 hashId: cr.hashId,
@@ -96,9 +106,7 @@ export function compileToInterCode({ uri, version, source }: Model) {
 
     let cr: CompileIntermediateResult
     if (isQingkuaiFile(uri)) {
-        cr = qingkuaiCompiler.compileIntermediate(source, {
-            shorthandDerivedDeclaration: true
-        })
+        cr = localQingkuaiCompiler.compileIntermediate(source, getConfig(filePath).qingkuaiConfig)
     } else {
         cr = mockCompileNonQingkuaiFile({ uri, version, source })
     }
@@ -132,19 +140,24 @@ export function compileToInterCode({ uri, version, source }: Model) {
             }
         }
     }) as CompileResult
-    return interCompileCache.set(filePath, ret), fsMap.set(filePath, cr.code), updateFile(filePath), ret
+    interCompileCache.set(filePath, ret)
+    cssSourceMap.set(filePath, source)
+    fsMap.set(filePath, cr.code)
+    updateFile(filePath)
+    return ret
 }
 
-function getConfig(filePath: string) {
+export function getConfig(filePath: string) {
     return {
         dirPath: "/",
         qingkuaiConfig: {
-            whitespace: "trim-collapse",
-            preserveHtmlComments: "all",
-            reactivityMode: "reactive",
+            allowConstReactive: true,
+            requireReactivityMark: false,
             interpretiveComments: true,
             resolveImportExtension: true,
-            shorthandDerivedDeclaration: true
+            reactivityMode: "reactive",
+            whitespace: "trim-collapse",
+            preserveHtmlComments: "always"
         },
         prettierConfig: {
             tabWidth: 4,
@@ -152,17 +165,16 @@ function getConfig(filePath: string) {
             arrowParens: "avoid",
             trailingComma: "all",
             singleAttributePerLine: true,
-            qingkuai: {
-                spaceAroundInterpolation: false,
-                componentTagFormatPreference: "camel",
-                componentAttributeFormatPreference: "camel"
-            }
+            spaceAroundInterpolation: false,
+            componentTagFormatPreference: "camel",
+            componentAttributeFormatPreference: "camel"
         },
         extensionConfig: {
             hoverTipReactiveStatus: true,
             typescriptDiagnosticsExplain: true,
             insertSpaceAroundInterpolation: false,
             componentTagFormatPreference: "camel",
+            inlayHintReactiveStatus: ["variable"],
             additionalCodeLens: ["component", "slot"],
             componentAttributeFormatPreference: "camel",
             htmlHoverTip: ["attribute", "entity", "tag"]
@@ -176,7 +188,7 @@ function getConfig(filePath: string) {
 
 function mockCompileNonQingkuaiFile({ source, uri }: Model): CompileIntermediateResult {
     const positions: ASTPositionWithFlag[] = []
-    const extension = pathImplementation.ext(uri).slice(1)
+    const extension = PATH_IMPLEMENTATION.ext(uri).slice(1)
     const isCss = extension === "css"
     const interIndexMap = Array.from({ length: source.length }, (_, i) => i)
     for (let i = 0, line = 1, column = 0; i <= source.length; i++) {
@@ -184,7 +196,7 @@ function mockCompileNonQingkuaiFile({ source, uri }: Model): CompileIntermediate
             line,
             column,
             index: i,
-            flag: qingkuaiCompiler.PositionFlag[isCss ? "InStyle" : "InScript"]
+            flag: localQingkuaiCompiler.PositionFlag[isCss ? "InStyle" : "InScript"]
         })
         source[i] === "\n" ? (line++, (column = 0)) : column++
     }
@@ -215,12 +227,14 @@ function mockCompileNonQingkuaiFile({ source, uri }: Model): CompileIntermediate
                       code: source,
                       loc: sourceLoc,
                       lang: "css",
+                      global: false,
                       startTagOpenRange: [0, 0]
                   }
               ]
             : [],
         positions,
         messages: [],
+        parseDiagnostics: [],
         slotNames: [],
         templateNodes: [],
         identifierStatusInfo: {},
@@ -229,13 +243,53 @@ function mockCompileNonQingkuaiFile({ source, uri }: Model): CompileIntermediate
 
         // @ts-ignore
         constructor: (() => 0) as any,
-        getInterIndex: i => i,
-        getSourceIndex: i => i,
+        getInterIndex: (i) => i,
+        getSourceIndex: (i) => i,
         getSlotTemplateNode: () => 0 as any,
         getTemplateNodeContext: () => 0 as any,
         isPositionFlagSetAtIndex: (flag, index) => !!(flag & positions[index].flag)
     } satisfies CompileIntermediateResult
 }
+function styleDepsUnchanged(filePath: string) {
+    const deps = runtimeStyleDeps[filePath]
+    if (!deps) {
+        return true
+    }
+    return Object.entries(deps).every(([dep, source]) => {
+        return (cssSourceMap.get(dep) ?? null) === source
+    })
+}
+
+function inlineStyleImports(
+    code: string,
+    dir: string,
+    deps: Record<string, string | null>,
+    seen: string[] = []
+): string {
+    return code.replace(
+        STYLE_IMPORT_STATEMENT_RE,
+        (statement, _quote: string, specifier: string) => {
+            if (!specifier.startsWith("./") && !specifier.startsWith("../")) {
+                return statement
+            }
+
+            const filePath = PATH_IMPLEMENTATION.resolve(dir, specifier)
+            if (seen.includes(filePath)) {
+                return statement
+            }
+
+            const content = cssSourceMap.get(filePath)
+            deps[filePath] = content ?? null
+            return content === undefined
+                ? statement
+                : inlineStyleImports(content, PATH_IMPLEMENTATION.dir(filePath), deps, [
+                      ...seen,
+                      filePath
+                  ])
+        }
+    )
+}
+
 function addScopeToSelectors(css: string, hash: string): string {
     const ast = csstree.parse(css)
     const hashAttribute: csstree.AttributeSelector = {
@@ -254,7 +308,10 @@ function addScopeToSelectors(css: string, hash: string): string {
     csstree.walk(ast, {
         visit: "Rule",
         enter(node: csstree.Rule) {
-            if (node.prelude.type !== "SelectorList" || (this as csstree.WalkContext).atrule?.name === "keyframes") {
+            if (
+                node.prelude.type !== "SelectorList" ||
+                (this as csstree.WalkContext).atrule?.name === "keyframes"
+            ) {
                 return
             }
             for (const selector of node.prelude.children.toArray()) {
@@ -264,23 +321,31 @@ function addScopeToSelectors(css: string, hash: string): string {
 
                 let hasBeenScoped = false
                 const hasScopeAttribute = !!selector.children.toArray().find(isScopeAttribute)
-                selector.children.forEachRight((node: csstree.CssNode, item: csstree.ListItem<csstree.CssNode>) => {
-                    if (isScopeAttribute(node)) {
-                        selector.children.replace(item, selector.children.createItem(hashAttribute))
+                selector.children.forEachRight(
+                    (node: csstree.CssNode, item: csstree.ListItem<csstree.CssNode>) => {
+                        if (isScopeAttribute(node)) {
+                            selector.children.replace(
+                                item,
+                                selector.children.createItem(hashAttribute)
+                            )
+                        }
+                        if (hasBeenScoped || hasScopeAttribute) {
+                            return
+                        }
+                        if (
+                            node.type === "IdSelector" ||
+                            node.type === "TypeSelector" ||
+                            node.type === "ClassSelector" ||
+                            node.type === "AttributeSelector"
+                        ) {
+                            selector.children.insert(
+                                selector.children.createItem(hashAttribute),
+                                item.next as any
+                            )
+                            return (hasBeenScoped = true)
+                        }
                     }
-                    if (hasBeenScoped || hasScopeAttribute) {
-                        return
-                    }
-                    if (
-                        node.type === "IdSelector" ||
-                        node.type === "TypeSelector" ||
-                        node.type === "ClassSelector" ||
-                        node.type === "AttributeSelector"
-                    ) {
-                        selector.children.insert(selector.children.createItem(hashAttribute), item.next as any)
-                        return (hasBeenScoped = true)
-                    }
-                })
+                )
             }
         }
     })

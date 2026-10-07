@@ -1,13 +1,13 @@
 <lang-ts>
-    import { onAfterDestroy } from "qingkuai"
-    interface Props {
-        msg: string
-        confirm?: () => void
-        cancel?: () => void
-    }
-
-    interface Refs {
-        visible: boolean
+    interface Meta {
+        props: {
+            msg: string
+            confirm?: () => void
+            cancel?: () => void
+        }
+        refs: {
+            visible: boolean
+        }
     }
 
     function handleCancel() {
@@ -47,16 +47,8 @@
         <p class="title">Message</p>
         <p class="info">{props.msg}</p>
         <div class="button-box">
-            <button
-                class="cancel-btn"
-                @click={handleCancel}
-                >Cancel</button
-            >
-            <button
-                class="confirm-btn"
-                @click={handleConfirm}
-                >Confirm</button
-            >
+            <button class="cancel-btn" @click={handleCancel}>Cancel</button>
+            <button class="confirm-btn" @click={handleConfirm}>Confirm</button>
         </div>
     </div>
 </div>
@@ -69,19 +61,20 @@
         z-index: 1;
         width: 100%;
         height: 100%;
-        background-color: #11111149;
+        background-color: var(--mask);
     }
     .modal {
         position: absolute;
-        top: 100px;
+        top: 120px;
         z-index: 2;
         width: 400px;
-        border-radius: 3px;
-        padding: 10px 15px;
+        border-radius: var(--radius-panel);
+        border: 1px solid var(--line);
+        padding: 16px 18px;
         left: calc(50% - 200px);
-        background-color: #444;
-        box-shadow: 0 0 10px #111;
-        color: var(--top-bar-font-color);
+        background-color: var(--panel);
+        box-shadow: var(--shadow);
+        color: var(--txt);
 
         .title {
             font-size: 15px;
@@ -92,6 +85,7 @@
         .info {
             font-size: 14px;
             margin-top: 8px;
+            color: var(--dim);
             letter-spacing: 0.3px;
         }
 
@@ -104,23 +98,29 @@
                 border: none;
                 font-size: 13px;
                 font-weight: 500;
-                margin-top: 10px;
-                padding: 6px 12px;
-                margin-left: 15px;
-                border-radius: 3px;
+                margin-top: 14px;
+                padding: 6px 14px;
+                margin-left: 12px;
+                border-radius: var(--radius-control);
                 letter-spacing: 0.5px;
 
                 &.cancel-btn {
-                    color: #222;
-                    background-color: #888;
+                    color: var(--dim);
+                    background-color: transparent;
+                    border: 1px solid var(--line);
+
+                    &:hover {
+                        color: var(--txt);
+                        background-color: var(--panel-hover);
+                    }
                 }
                 &.confirm-btn {
-                    color: white;
-                    background-color: var(--main-color);
-                }
+                    color: var(--accent-contrast);
+                    background-color: var(--accent);
 
-                &:hover {
-                    opacity: 0.8;
+                    &:hover {
+                        opacity: 0.85;
+                    }
                 }
             }
         }

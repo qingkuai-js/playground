@@ -5,6 +5,7 @@ import "./styles/animate.scss"
 import "./service/message"
 import "./monaco/environment"
 import "./monaco/themes/monakai-spectrum"
+import "./monaco/themes/monakai-spectrum-light"
 
 import { mountApp } from "qingkuai"
 import App from "./components/App.qk"

@@ -3,8 +3,10 @@
     import { refreshCompiledCode } from "../monaco/init"
     import { qingkuaiVersionsPms, tsVersionsPms } from "../util/constants"
 
-    interface Props {
-        package: "typescript" | "qingkuai"
+    interface Meta {
+        props: {
+            package: "typescript" | "qingkuai"
+        }
     }
 
     let isLoading = false
@@ -12,7 +14,9 @@
     let mainDom!: HTMLDivElement
     let candidateVersions: string[] = []
     const formatedPkgName = props.package[0].toUpperCase() + props.package.slice(1)
-    const currentVersion = derivedExp(store[props.package === "qingkuai" ? "qingkuaiVersion" : "tsVersion"])
+    const currentVersion = derivedExp(
+        store[props.package === "qingkuai" ? "qingkuaiVersion" : "tsVersion"]
+    )
 
     function handleSelectVersion(version: string) {
         if (props.package === "typescript") {
@@ -42,26 +46,11 @@
     }
 </lang-ts>
 
-<div
-    class="version-selector"
-    &dom={mainDom}
-    @click={loadVersions}
->
+<div class="version-selector" &handle={mainDom} @click={loadVersions}>
     <span>{formatedPkgName} {currentVersion}</span>
-    <i
-        class="iconfont"
-        !class={`icon-${isLoading ? "loading" : "arrow"}`}
-    ></i>
-    <ul
-        class="selection-box"
-        !hidden={!showVersionList}
-    >
-        <li
-            #for={item of candidateVersions}
-            @click|stop={handleSelectVersion(item)}
-        >
-            {item}
-        </li>
+    <i class="iconfont" !class={`icon-${isLoading ? "loading" : "arrow"}`}></i>
+    <ul class="selection-box" !hidden={!showVersionList}>
+        <li #for={item of candidateVersions} @click|stop={handleSelectVersion(item)}>{item}</li>
         <div
             class="mask"
             #if={showVersionList}
@@ -73,18 +62,31 @@
 
 <lang-scss>
     .version-selector {
-        display: inline-block;
+        display: inline-flex;
         position: relative;
         user-select: none;
         cursor: pointer;
+        align-items: center;
         z-index: 11;
         font-size: 13px;
         font-weight: 500;
-        margin-left: 15px;
+        margin-left: 12px;
         letter-spacing: 0.3px;
-        height: var(--top-bar-height);
-        color: var(--top-bar-font-color);
-        line-height: var(--top-bar-height);
+        height: 28px;
+        padding: 0 10px;
+        color: var(--dim);
+        border-radius: var(--radius-control);
+        border: 1px solid var(--line);
+        background-color: var(--panel);
+        transition:
+            color 0.15s ease,
+            border-color 0.15s ease,
+            background-color 0.25s ease;
+
+        &:hover {
+            color: var(--txt);
+            border-color: var(--faint);
+        }
 
         .iconfont {
             font-size: 14px;
@@ -97,15 +99,19 @@
         }
 
         .selection-box {
-            max-height: calc(100vh - 75px);
+            max-height: calc(100vh - 110px);
             z-index: 11;
             width: 100%;
-            overflow: hidden;
-            overflow-y: visible;
+            overflow-y: auto;
+            scrollbar-width: thin;
             position: absolute;
-            border-radius: 3px;
-            background-color: #333;
-            top: var(--top-bar-height);
+            top: 36px;
+            box-sizing: border-box;
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background-color: var(--panel);
+            box-shadow: var(--shadow);
 
             li {
                 cursor: pointer;
@@ -113,16 +119,14 @@
                 font-size: 13px;
                 height: 20px;
                 line-height: 20px;
-                padding: 6px 10px;
+                padding: 6px 8px;
+                border-radius: 6px;
+                color: var(--dim);
 
                 &:hover {
-                    background-color: #444;
-                    color: var(--top-bar-active-font-color);
+                    background-color: var(--panel-hover);
+                    color: var(--txt);
                 }
-            }
-
-            &.active {
-                box-shadow: 0 0 3px #555;
             }
         }
     }

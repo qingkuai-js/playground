@@ -4,8 +4,10 @@
     import { getLanguageId, fileUriToPath } from "../util/sundary"
     import { addModel, changeModel, refreshCompiledCode } from "../monaco/init"
 
-    interface Props {
-        location: "left" | "right"
+    interface Meta {
+        props: {
+            location: "left" | "right"
+        }
     }
 
     let modalMsg = ""
@@ -14,7 +16,7 @@
     let originalFileName = ""
     let waitForDeleteIndex = -1
     const showButtons = props.location === "left"
-    const validFileNameRE = /^[^\/\\]+\.(?:qk|[jt]s)$/
+    const validFileNameRE = /^[^\/\\]+\.(?:qk|[jt]s|css)$/
     const fileTabInputElements: HTMLInputElement[] = []
     const container = store[props.location === "left" ? "leftFileTab" : "rightFileTab"]
 
@@ -106,24 +108,20 @@
 <div class="file-tab">
     <div
         class="item"
+        #key={index}
         #for={item, index of container.tabs}
         @click={handleChangeActiveModel(index)}
         !class={index === container.activeIndex ? "active" : ""}
-        !style={showButtons && index !== 0 ? "" : "padding: 0 20px;"}
     >
-        <i
-            class="iconfont"
-            #if={showButtons}
-            !class={`icon-${item.slice(-2)}`}
-        ></i>
+        <span class="dot" #if={showButtons} !class={`d-${item.slice(-2)}`}></span>
         <p !class={{ typing: inputIndex === index }}>
             <span @dblclick={showInput(index)}> {container.tabs[index]} </span>
             <input
                 type="text"
                 spellcheck="false"
-                @blur={handleConfirmRename}
                 &value={container.tabs[index]}
-                &dom={fileTabInputElements[index]}
+                &handle={fileTabInputElements[index]}
+                @blur={handleConfirmRename}
                 @keyup|enter={handleConfirmRename}
             />
         </p>
@@ -135,76 +133,79 @@
             <i class="iconfont icon-close"></i>
         </button>
     </div>
-    <button
-        class="add-btn"
-        #if={showButtons}
-        @click={handleAddTab}
-    >
+    <button class="add-btn" #if={showButtons} @click={handleAddTab}>
         <i class="iconfont icon-add"></i>
     </button>
-    <Modal
-        !msg={modalMsg}
-        &visible={modalVisible}
-        @confirm={handleConfirmDelete}
-    />
+    <Modal !msg={modalMsg} &visible={modalVisible} @confirm={handleConfirmDelete} />
 </div>
 
 <lang-scss>
     .file-tab {
         display: flex;
+        flex-shrink: 0;
         width: 100%;
-        overflow: hidden;
+        height: 38px;
+        padding: 0 8px;
+        box-sizing: border-box;
+        gap: 3px;
         align-items: center;
-        border-bottom: none;
-        overflow-x: visible;
-        border: 1px solid #444;
-        background-color: #111;
+        overflow-x: auto;
+        scrollbar-width: none;
+        border-bottom: 1px solid var(--line-soft);
+        background-color: var(--panel);
+        transition:
+            background-color 0.25s ease,
+            border-color 0.25s ease;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
 
         .item {
             cursor: pointer;
             position: relative;
             display: flex;
+            flex-shrink: 0;
             align-items: center;
-            height: 30px;
-            color: #999;
+            height: 26px;
+            padding: 0 20px;
+            color: var(--dim);
             font-size: 12px;
             line-height: 22px;
             letter-spacing: 0.3px;
-            padding: 0 3px 0 10px;
+            border-radius: 7px;
+            transition:
+                background-color 0.15s ease,
+                color 0.15s ease;
 
-            &::after {
-                visibility: hidden;
-                content: "";
-                position: absolute;
-                left: 0;
-                bottom: 0;
-                width: 100%;
-                height: 1px;
+            &:hover:not(.active) {
+                color: var(--txt);
+                background-color: var(--tab-hover-bg);
             }
 
             &.active {
-                color: var(--file-active-color);
-
-                &::after {
-                    visibility: visible;
-                    background-color: var(--file-active-color);
-                }
+                color: var(--tab-active-fg);
+                background-color: var(--tab-active-bg);
             }
 
-            .iconfont:not(.icon-close) {
-                font-size: 13px;
-                margin-right: 5px;
+            .dot {
+                width: 7px;
+                height: 7px;
+                margin-right: 7px;
+                flex-shrink: 0;
+                border-radius: 50%;
 
-                &.icon-js {
-                    color: #fce566;
+                &.d-qk {
+                    background-color: #2296f3;
                 }
-                &.icon-ts {
-                    color: #5ad4e6;
-                    transform: scale(0.9);
+                &.d-ts {
+                    background-color: #3178c6;
                 }
-                &.icon-qk {
-                    color: var(--main-color);
-                    transform: scale(1.12) translateY(-1px);
+                &.d-js {
+                    background-color: #f1e05a;
+                }
+                &.d-ss {
+                    background-color: #563d7c;
                 }
             }
 
@@ -216,15 +217,15 @@
                 line-height: 18px;
                 text-align: center;
                 visibility: hidden;
-                border-radius: 3px;
-                background-color: inherit;
+                border-radius: 5px;
+                background-color: transparent;
 
                 &:hover {
-                    background-color: #222;
+                    background-color: var(--panel-hover);
                 }
 
                 .icon-close {
-                    color: white;
+                    color: inherit;
                     font-size: 15px;
                 }
             }
@@ -248,6 +249,7 @@
                     font: inherit;
                     outline: none;
                     color: inherit;
+                    caret-color: var(--dim);
                     visibility: hidden;
                     line-height: inherit;
                     background: transparent;
@@ -270,36 +272,31 @@
                 .delete-btn {
                     visibility: visible;
                 }
-
-                &:not(.active) span {
-                    color: white;
-                }
-
-                &:not(.active)::after {
-                    visibility: visible;
-                    background-color: #999;
-                }
             }
         }
 
         .add-btn {
             cursor: pointer;
-            width: 20px;
-            height: 20px;
+            flex-shrink: 0;
+            width: 26px;
+            height: 26px;
             padding: 0;
-            line-height: 20px;
-            border-radius: 3px;
+            line-height: 26px;
+            border-radius: 7px;
             text-align: center;
-            margin: 0 20px 0 5px;
-            background-color: inherit;
+            margin: 0 8px 0 5px;
+            color: var(--dim);
+            background-color: transparent;
+            transition: color 0.15s ease;
 
             &:hover {
-                background: #222;
+                background: var(--panel-hover);
+                color: var(--txt);
             }
 
             .icon-add {
                 font-size: 12px;
-                color: #999;
+                color: inherit;
             }
         }
     }

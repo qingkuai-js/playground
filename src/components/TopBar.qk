@@ -2,16 +2,19 @@
     import Switch from "./Switch"
     import logo from "../assets/logo.png"
     import VersionSelector from "./VersionSelector"
-    import { store, leftEditor } from "../util/state"
-    import { refreshCompiledCode } from "../monaco/init"
 
-    function reloadCodeLens() {
-        const currentModel = leftEditor.getModel()!
-        currentModel.setValue(currentModel.getValue())
-    }
+    import { store } from "../util/state"
+    import { refreshCompiledCode } from "../monaco/init"
+    import { refreshCodeLens } from "../monaco/languages/provider"
+    import { applyQingkuaiTheme } from "../monaco/themes/monakai-spectrum-light"
 
     function handleChangeCompileOptions(key: "comment" | "debug", value: boolean) {
         ;((store[key] = value), refreshCompiledCode(false))
+    }
+
+    function handleToggleTheme() {
+        store.theme = store.theme === "light" ? "dark" : "light"
+        applyQingkuaiTheme(store.theme)
     }
 </lang-ts>
 
@@ -21,11 +24,7 @@
         <span>QingKuai Playground</span>
     </div>
     <div class="right">
-        <Switch
-            label="code lens"
-            @change={reloadCodeLens}
-            &checked={store.codeLens}
-        />
+        <Switch label="code lens" @change={refreshCodeLens} &checked={store.codeLens} />
         <Switch
             label="debug"
             &checked={store.debug}
@@ -38,6 +37,9 @@
         />
         <VersionSelector package="typescript" />
         <VersionSelector package="qingkuai" />
+        <button class="theme-btn" @click={handleToggleTheme}>
+            <i class="halo"></i> {store.theme}
+        </button>
         <a href="https://github.com/qingkuai-js/qingkuai">
             <i class="iconfont icon-github"></i>
         </a>
@@ -48,56 +50,88 @@
     .top-bar {
         display: flex;
         height: var(--top-bar-height);
-        background-color: #111;
+        box-sizing: border-box;
+        padding: 0 16px 0 14px;
+        align-items: center;
         justify-content: space-between;
+        border-radius: var(--radius-panel);
+        border: 1px solid var(--line);
+        background-color: var(--panel);
+        transition:
+            background-color 0.25s ease,
+            border-color 0.25s ease;
 
         .left {
             display: flex;
-            margin-left: 10px;
             align-items: center;
 
             img {
-                width: 30px;
-                height: 30px;
+                width: 26px;
+                height: 26px;
+                border-radius: 6px;
             }
 
             span {
-                position: relative;
                 font-size: 14px;
                 font-weight: bold;
-                margin-left: 5px;
+                margin-left: 10px;
                 overflow: hidden;
                 letter-spacing: 0.5px;
-                color: var(--main-color);
-
-                &::before {
-                    content: "";
-                    position: absolute;
-                    display: block;
-                    width: 100px;
-                    height: 3px;
-                    filter: blur(4px);
-                    background-color: white;
-                    transform: rotateZ(-20deg);
-                    animation: glitter 8s ease-in-out infinite;
-                }
+                color: var(--txt);
             }
         }
 
         .right {
             display: flex;
-            height: 40px;
-            margin-right: 20px;
             align-items: center;
+
+            .theme-btn {
+                display: inline-flex;
+                height: 28px;
+                align-items: center;
+                gap: 7px;
+                margin-left: 12px;
+                padding: 0 12px;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 500;
+                letter-spacing: 0.3px;
+                color: var(--dim);
+                border-radius: var(--radius-control);
+                border: 1px solid var(--line);
+                background-color: var(--panel);
+                transition:
+                    color 0.15s ease,
+                    border-color 0.15s ease,
+                    background-color 0.25s ease;
+
+                &:hover {
+                    color: var(--txt);
+                    border-color: var(--faint);
+                }
+
+                .halo {
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 50%;
+                    border: 1px solid currentColor;
+                    background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+                }
+            }
 
             .iconfont {
                 font-size: 22px;
-                color: white;
-                margin-left: 20px;
+                color: var(--dim);
+                margin-left: 16px;
+                transition: color 0.2s ease;
             }
 
             a {
                 text-decoration: none;
+
+                &:hover .iconfont {
+                    color: var(--txt);
+                }
             }
         }
     }

@@ -15,10 +15,10 @@ function getScriptContent(client: Client, fileName: string) {
         fileName,
         name: "sw_getScriptContent"
     })
-    return new Promise<string | undefined>(resolve => (pendingRequest[id] = resolve))
+    return new Promise<string | undefined>((resolve) => (pendingRequest[id] = resolve))
 }
 
-sw.addEventListener("fetch", event => {
+sw.addEventListener("fetch", (event) => {
     const url = new URL(event.request.url)
     event.respondWith(
         (async () => {
@@ -29,7 +29,10 @@ sw.addEventListener("fetch", event => {
                 client?.frameType === "nested" &&
                 url.pathname.startsWith(virtualModulePrefix)
             ) {
-                const content = await getScriptContent(client, url.pathname.slice(virtualModulePrefix.length))
+                const content = await getScriptContent(
+                    client,
+                    url.pathname.slice(virtualModulePrefix.length)
+                )
                 if (content) {
                     return new Response(content, {
                         headers: {
@@ -43,9 +46,16 @@ sw.addEventListener("fetch", event => {
     )
 })
 
-sw.onmessage = ({ data }) => {
+sw.onmessage = (event) => {
+    const data = event.data
+    // 唤醒探测：worker 被浏览器空闲停止后，后续页面请求可能不再经过它，
+    // 收到消息（并回执）说明 worker 已启动，之后的请求才会被重新接管
+    if (data?.name === "sw_ping") {
+        event.source?.postMessage({ name: "sw_pong", t: data.t })
+        return
+    }
     pendingRequest[data.id]?.(data.content)
     pendingRequest[data.id] = undefined
 }
 sw.addEventListener("install", () => sw.skipWaiting())
-sw.addEventListener("activate", event => event.waitUntil(sw.clients.claim()))
+sw.addEventListener("activate", (event) => event.waitUntil(sw.clients.claim()))

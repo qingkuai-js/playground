@@ -1,7 +1,10 @@
 import type Monaco from "monaco-editor-core"
 import type { Model } from "../../types/communication"
 import type { GeneralFunc, PromiseWithState, RuntimeCompileResult } from "../../types/common"
-import type { MonacoCodeLensItemWithOriginal, MonacoCompletionItemWithOriginal } from "../../types/monaco"
+import type {
+    MonacoCodeLensItemWithOriginal,
+    MonacoCompletionItemWithOriginal
+} from "../../types/monaco"
 
 import * as monaco from "monaco-editor-core"
 
@@ -9,6 +12,8 @@ import LanguageWorker from "../../worker/handelr?worker"
 
 import { Handlers } from "../../util/constants"
 import { convertHover } from "./convertor/hover"
+import { convertSignatureHelp } from "./convertor/signature-help"
+import { convertInlayHints } from "./convertor/inlay-hint"
 import { leftEditor, store } from "../../util/state"
 import { isExternalFileName, isUndefined } from "../../util/assert"
 import { convertLocations } from "./convertor/location"
@@ -29,6 +34,12 @@ export default class {
             if (excuteClientHandler(data)) {
                 return
             }
+            if (data.error) {
+                // worker 内的异常不会冒泡到页面控制台，此处回传的错误信息是唯一的排障入口
+                console.error(
+                    `[Qingkuai Playground] worker handler "${data.name}" failed:\n${data.error}`
+                )
+            }
             if (this.promises[data.name + data.id]) {
                 this.promises[data.name + data.id][1](data.arg)
             }
@@ -47,7 +58,11 @@ export default class {
         debug: boolean,
         comment: boolean
     ): Promise<string | RuntimeCompileResult> {
-        return await this.request(Handlers.GetCompileResult, { model, debug, comment })
+        return await this.request(Handlers.GetCompileResult, {
+            model,
+            debug,
+            comment
+        })
     }
 
     public async deleteFile(fileName: string) {
@@ -55,7 +70,10 @@ export default class {
     }
 
     public async loadCore(tsVersion: string, qingkuaiVersion: string) {
-        return await this.request(Handlers.LoadCore, { tsVersion, qingkuaiVersion })
+        return await this.request(Handlers.LoadCore, {
+            tsVersion,
+            qingkuaiVersion
+        })
     }
 
     public async codeLens(model: Model) {
@@ -67,12 +85,19 @@ export default class {
     }
 
     public async prepareRename(model: Model, offset: number) {
-        const lsRange = await this.request(Handlers.PrepareRename, { model, offset })
+        const lsRange = await this.request(Handlers.PrepareRename, {
+            model,
+            offset
+        })
         return lsRange && convertRange(lsRange)
     }
 
     public async rename(model: Model, offset: number, newName: string) {
-        const ret = await this.request(Handlers.Rename, { model, offset, newName })
+        const ret = await this.request(Handlers.Rename, {
+            model,
+            offset,
+            newName
+        })
         return ret && convertWorkspaceEdit(ret)
     }
 
@@ -112,15 +137,37 @@ export default class {
         if (response._ori) {
             return response
         }
-        return convertCompletionItem(response, { range: item.range, commitChars: item.commitCharacters })
+        return convertCompletionItem(response, {
+            range: item.range,
+            commitChars: item.commitCharacters
+        })
     }
 
     public async getDocumentFormattingEdits(model: Model) {
         return ((await this.request(Handlers.FormatDocument, model)) ?? []).map(convertTextEdit)
     }
 
-    public async getSignatureHelp(model: Model, offset: number, context: Monaco.languages.SignatureHelpContext) {
-        return await this.request(Handlers.GetSignatureHelp, { model, offset, context })
+    public async getSignatureHelp(
+        model: Model,
+        offset: number,
+        context: Monaco.languages.SignatureHelpContext
+    ) {
+        return convertSignatureHelp(
+            await this.request(Handlers.GetSignatureHelp, {
+                model,
+                offset,
+                context
+            })
+        )
+    }
+
+    public async getInlayHints(model: Model) {
+        const hints = convertInlayHints(await this.request(Handlers.GetInlayHints, { model }))
+        return { hints, dispose: () => {} }
+    }
+
+    public async findTypeDefinitions(model: Model, offset: number) {
+        return convertLocations(await this.request(Handlers.FindTypeDefinitions, { model, offset }))
     }
 
     public async getDocumentColors(model: Model) {
@@ -132,30 +179,46 @@ export default class {
     }
 
     public async findDefinitions(model: Model, offset: number) {
-        const ret = convertLocations(await this.request(Handlers.FindDefinitions, { model, offset }))
+        const ret = convertLocations(
+            await this.request(Handlers.FindDefinitions, { model, offset })
+        )
         if (ret?.length === 1 && isExternalFileName(ret[0].uri.fsPath)) {
-            return (store.showingExternalSingleDefinition = true), [ret[0], ret[0]]
+            return ((store.showingExternalSingleDefinition = true), [ret[0], ret[0]])
         }
-        return (store.showingExternalSingleDefinition = false), ret
+        return ((store.showingExternalSingleDefinition = false), ret)
     }
 
     public async findImplementations(model: Model, offset: number) {
         return convertLocations(await this.request(Handlers.FindImplementations, { model, offset }))
     }
 
-    public async getColorPresentations(model: Model, range: Monaco.IRange, color: Monaco.languages.IColor) {
-        return convertColorPresentations(await this.request(Handlers.GetColorPresentations, { model, range, color }))
+    public async getColorPresentations(
+        model: Model,
+        range: Monaco.IRange,
+        color: Monaco.languages.IColor
+    ) {
+        return convertColorPresentations(
+            await this.request(Handlers.GetColorPresentations, {
+                model,
+                range,
+                color
+            })
+        )
     }
 }
 
 function excuteClientHandler(data: any) {
     switch (data.name) {
         case Handlers.ShowMessage: {
-            return (store.message.left = data), true
+            return ((store.message.left = data), true)
         }
         case Handlers.FileLoaded: {
             monaco.editor.getModel(monaco.Uri.file(data.fileName))?.dispose()
-            return monaco.editor.createModel(data.content, "typescript", monaco.Uri.file(data.fileName))
+            return monaco.editor.createModel(
+                data.content,
+                "typescript",
+                monaco.Uri.file(data.fileName)
+            )
         }
         case Handlers.insertSnippet: {
             const position = leftEditor.getPosition()
@@ -164,7 +227,10 @@ function excuteClientHandler(data: any) {
             }
 
             ;(leftEditor.getContribution("snippetController2") as any)?.insert(data.text)
-            return setTimeout(() => data.command && leftEditor.trigger("", data.command, 0), 20), true
+            return (
+                setTimeout(() => data.command && leftEditor.trigger("", data.command, 0), 20),
+                true
+            )
         }
     }
     return false

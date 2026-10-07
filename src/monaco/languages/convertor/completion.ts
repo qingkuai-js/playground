@@ -1,4 +1,7 @@
-import type { MonacoCompletionListWithOriginal, MonacoCompletionItemWithOriginal } from "../../../types/monaco"
+import type {
+    MonacoCompletionListWithOriginal,
+    MonacoCompletionItemWithOriginal
+} from "../../../types/monaco"
 
 import { convertRange } from "./struct"
 import * as monaco from "monaco-editor-core"
@@ -15,10 +18,13 @@ export function convertCompletions(
 
     const suggestions: MonacoCompletionItemWithOriginal[] = []
     const itemDefaults = convertItemDefaults(from, defaultRange)
-    ;(isArray(from) ? from : from.items).forEach(item => {
+    ;(isArray(from) ? from : from.items).forEach((item) => {
         suggestions.push(convertCompletionItem(item, itemDefaults))
     })
-    return { incomplete: isArray(from) ? false : from.isIncomplete, suggestions }
+    return {
+        incomplete: isArray(from) ? false : from.isIncomplete,
+        suggestions
+    }
 }
 
 export function convertCompletionItem(
@@ -88,7 +94,9 @@ function convertAdditionalTextEditItem(from: lst.TextEdit): monaco.editor.ISingl
     }
 }
 
-function convertCompletionKind(from: lst.CompletionItemKind | undefined): monaco.languages.CompletionItemKind {
+function convertCompletionKind(
+    from: lst.CompletionItemKind | undefined
+): monaco.languages.CompletionItemKind {
     const monacoKind = monaco.languages.CompletionItemKind
     switch (from) {
         case lst.CompletionItemKind.Class:

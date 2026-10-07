@@ -94,7 +94,9 @@ const config: monaco.languages.LanguageConfiguration = {
     indentationRules: {
         decreaseIndentPattern: new RegExp("^\\s*[\\}\\]\\)].*$"),
         increaseIndentPattern: new RegExp("^.*(\\{[^}]*|\\([^)]*|\\[[^\\]]*)$"),
-        indentNextLinePattern: new RegExp("^((.*=>\\s*)|((.*[^\\w]+|\\s*)(if|while|for)\\s*\\(.*\\)\\s*))$"),
+        indentNextLinePattern: new RegExp(
+            "^((.*=>\\s*)|((.*[^\\w]+|\\s*)(if|while|for)\\s*\\(.*\\)\\s*))$"
+        ),
         unIndentedLinePattern: new RegExp(
             "^(\\t|[ ])*[ ]\\*[^/]*\\*/\\s*$|^(\\t|[ ])*[ ]\\*/\\s*$|^(\\t|[ ])*\\*([ ]([^\\*]|\\*(?!/))*)?$"
         )
@@ -145,7 +147,9 @@ const config: monaco.languages.LanguageConfiguration = {
             }
         },
         {
-            previousLineText: new RegExp("^\\s*(((else ?)?if|for|while)\\s*\\(.*\\)\\s*|else\\s*)$"),
+            previousLineText: new RegExp(
+                "^\\s*(((else ?)?if|for|while)\\s*\\(.*\\)\\s*|else\\s*)$"
+            ),
             beforeText: new RegExp("^\\s+([^{i\\s]|i(?!f\\b))"),
             action: {
                 indentAction: monaco.languages.IndentAction.Outdent

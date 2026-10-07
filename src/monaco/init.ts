@@ -1,31 +1,51 @@
+import * as monaco from "monaco-editor-core"
+
 import {
     tsVersionsPms,
+    INITIAL_STYLE_CODE,
     qingkuaiVersionsPms,
-    initialComponentCode,
-    defaultRuntimeCompileResult
+    INITIAL_COMPONENT_CODE,
+    DEFAULT_RUNTIME_COMPILE_RESULT
 } from "../util/constants"
 import { render } from "../service/render"
-import * as monaco from "monaco-editor-core"
 import { qingkuaiLanguageService } from "../util/loadpkg"
 import { wireLanguageTmGrammars } from "./languages/grammar"
 import { registerQingkuaiProviders } from "./languages/provider"
+import { monacoThemeName } from "./themes/monakai-spectrum-light"
 import { fileUriToPath, getClonableModel } from "../util/sundary"
 import { isExternalFile, isQingkuaiFile, isString } from "../util/assert"
-import { cleanMessage, fileInfos, leftEditor, rightEditor, setState, store, worker } from "../util/state"
+import {
+    cleanMessage,
+    fileInfos,
+    leftEditor,
+    rightEditor,
+    setState,
+    store,
+    worker
+} from "../util/state"
+
+const EDITOR_FONT_FAMILY =
+    'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace'
 
 export async function initializeMonacoEditor() {
     await Promise.all([tsVersionsPms, qingkuaiVersionsPms])
 
     setState({
         leftEditor: monaco.editor.create(
-            document.querySelector(".editors .left")!,
+            document.querySelector(".editors .left .editor-host")!,
             {
-                fontFamily: '"JetBrains Mono", Menlo, Monaco, "Courier New", monospace',
-                fontSize: 13,
+                fontSize: 12,
+                lineHeight: 20,
+                automaticLayout: true,
+                inlayHints: {
+                    fontSize: 11,
+                    padding: true
+                },
                 minimap: {
                     enabled: false
                 },
-                theme: "monokai-pro-spectrum"
+                theme: monacoThemeName(store.theme),
+                fontFamily: EDITOR_FONT_FAMILY
             },
             {
                 storageService: {
@@ -43,28 +63,33 @@ export async function initializeMonacoEditor() {
                 }
             }
         ),
-        rightEditor: monaco.editor.create(document.querySelector(".editors .right")!, {
+        rightEditor: monaco.editor.create(document.querySelector(".editors .right .editor-host")!, {
             minimap: {
                 enabled: false
             },
+            automaticLayout: true,
             readOnly: true,
-            fontSize: 13,
-            lineHeight: 1.8,
+            fontSize: 12,
+            lineHeight: 20,
+            inlayHints: {
+                fontSize: 11,
+                padding: true
+            },
             overviewRulerLanes: 0,
             renderLineHighlight: "none",
             selectionHighlight: false,
             occurrencesHighlight: "off",
-            theme: "monokai-pro-spectrum",
-            fontFamily: '"JetBrains Mono", Menlo, Monaco, "Courier New", monospace'
+            theme: monacoThemeName(store.theme),
+            fontFamily: EDITOR_FONT_FAMILY
         })
     })
 
     fileInfos.set("/compiled/_.css", {
-        ...defaultRuntimeCompileResult,
+        ...DEFAULT_RUNTIME_COMPILE_RESULT,
         model: monaco.editor.createModel("", "css", monaco.Uri.file("/compiled/_.css"))
     })
     fileInfos.set("/compiled/_.ts", {
-        ...defaultRuntimeCompileResult,
+        ...DEFAULT_RUNTIME_COMPILE_RESULT,
         model: monaco.editor.createModel("", "typescript", monaco.Uri.file("/compiled/_.ts"))
     })
 
@@ -73,8 +98,18 @@ export async function initializeMonacoEditor() {
     registerQingkuaiProviders()
     registerPublishDiagnostic()
 
-    leftEditor.setModel(monaco.editor.createModel(initialComponentCode, "qingkuai", monaco.Uri.file("/App.qk")))
-    fileInfos.set("App.qk", { model: leftEditor.getModel()!, ...defaultRuntimeCompileResult })
+    fileInfos.set("style.css", {
+        ...DEFAULT_RUNTIME_COMPILE_RESULT,
+        model: monaco.editor.createModel(INITIAL_STYLE_CODE, "css", monaco.Uri.file("/style.css"))
+    })
+    leftEditor.setModel(
+        monaco.editor.createModel(INITIAL_COMPONENT_CODE, "qingkuai", monaco.Uri.file("/App.qk"))
+    )
+    fileInfos.set("App.qk", {
+        model: leftEditor.getModel()!,
+        ...DEFAULT_RUNTIME_COMPILE_RESULT
+    })
+    await worker.getDiagnostics(getClonableModel(fileInfos.get("style.css")!.model))
     refreshCompiledCode(true)
 
     const removeEditListener = leftEditor.onDidChangeModelContent(() => {
@@ -90,10 +125,16 @@ export async function refreshCompiledCode(rerender: boolean) {
     }
 
     const fileName = fileUriToPath(model.uri.toString()).slice(1)
-    const compileResult = await worker.getCompileResult(getClonableModel(model), store.debug, store.comment)
+    const compileResult = await worker.getCompileResult(
+        getClonableModel(model),
+        store.debug,
+        store.comment
+    )
     if (!isString(compileResult)) {
         const targetIsQingkuaiFile = isQingkuaiFile(fileName)
-        store.rightFileTab.tabs = ["preview"].concat(targetIsQingkuaiFile ? ["script", "style"] : [])
+        store.rightFileTab.tabs = ["preview"].concat(
+            targetIsQingkuaiFile ? ["script", "style"] : []
+        )
         if (targetIsQingkuaiFile) {
             if (store.rightFileTab.activeIndex === 1) {
                 const model = fileInfos.get("/compiled/_.ts")!.model
@@ -104,6 +145,8 @@ export async function refreshCompiledCode(rerender: boolean) {
                 model.setValue(compileResult.style || "/* no scoped style rule */")
                 rightEditor.setModel(model)
             }
+        } else if (rerender) {
+            await refreshEntryCompileResult(fileName)
         }
         if (rerender && store.rightFileTab.activeIndex === 0) {
             const fileInfo = fileInfos.get(fileName)!
@@ -123,14 +166,38 @@ export async function refreshCompiledCode(rerender: boolean) {
     }
 }
 
+async function refreshEntryCompileResult(excludedFileName: string) {
+    const entryName = store.leftFileTab.tabs.find(
+        (item) => isQingkuaiFile(item) && item !== excludedFileName
+    )
+    const entryInfo = entryName && fileInfos.get(entryName)
+    if (!entryName || !entryInfo) {
+        return
+    }
+
+    const entryResult = await worker.getCompileResult(
+        getClonableModel(entryInfo.model),
+        store.debug,
+        store.comment
+    )
+    if (!isString(entryResult)) {
+        fileInfos.set(entryName, {
+            model: entryInfo.model,
+            style: entryResult.style,
+            script: entryResult.script,
+            semiScript: entryResult.semiScript
+        })
+    }
+}
+
 export function addModel(languageId: string, fileName: string) {
     const model = monaco.editor.createModel("", languageId, monaco.Uri.file("/" + fileName))
-    fileInfos.set(fileName, { ...defaultRuntimeCompileResult, model })
-    return leftEditor.setModel(model), focusAndSetPosition(), model
+    fileInfos.set(fileName, { ...DEFAULT_RUNTIME_COMPILE_RESULT, model })
+    return (leftEditor.setModel(model), focusAndSetPosition(), model)
 }
 
 export function changeModel(fileName: string) {
-    const index = store.leftFileTab.tabs.findIndex(item => item === fileName)
+    const index = store.leftFileTab.tabs.findIndex((item) => item === fileName)
     if (index !== -1) {
         const model = fileInfos.get(fileName)!.model
         leftEditor.setModel(model)
@@ -155,7 +222,7 @@ const publishDiagnostics = qingkuaiLanguageService.util.debounce(
         refreshCompiledCode(rerender)
     },
     350,
-    m => m.uri
+    (m) => m.uri
 )
 
 function proxyOpenEditor() {
@@ -179,7 +246,7 @@ function proxyOpenEditor() {
 
 function registerPublishDiagnostic() {
     // 为 model 添加发布诊断功能
-    monaco.editor.onDidCreateModel(model => {
+    monaco.editor.onDidCreateModel((model) => {
         if (isExternalFile(model)) {
             return
         }

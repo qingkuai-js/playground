@@ -1,8 +1,3 @@
-.editors .left > .monaco-editor,
-.editors .right > .monaco-editor {
-    padding-top: 5px;
-}
-
 .monaco-editor .rename-box .rename-input {
     color: white;
     margin-left: 5px;
@@ -23,4 +18,8 @@
 .monaco-editor-overlaymessage,
 .monaco-editor .suggest-widget > .message {
     transform: scale(0.8) translate(-12.5%, -5%);
+}
+
+.editors .editor-host > .monaco-editor {
+    border-radius: 0 0 calc(var(--radius-panel) - 1px) calc(var(--radius-panel) - 1px);
 }

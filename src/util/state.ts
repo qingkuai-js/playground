@@ -6,7 +6,8 @@ import type { FileInfo, SetStateOptions } from "../types/common"
 
 import { createStore } from "qingkuai"
 import { isUndefined } from "./assert"
-import { defaultMessage } from "./constants"
+import { getInitialTheme } from "./theme"
+import { DEFAULT_MESSAGE } from "./constants"
 
 export let hasBeenEdited = false
 export let worker: LanguageWorker
@@ -23,20 +24,21 @@ export const store = createStore<Store>({
     comment: true,
     leftFileTab: {
         activeIndex: 0,
-        tabs: ["App.qk"]
+        tabs: ["App.qk", "style.css"]
     },
     rightFileTab: {
         activeIndex: 0,
         tabs: ["preview", "script", "style"]
     },
+    theme: getInitialTheme(),
     tsVersion: "loading...",
     qingkuaiVersion: "loading",
-    message: { ...defaultMessage },
+    message: { ...DEFAULT_MESSAGE },
     showingExternalSingleDefinition: false
 })
 
 export function cleanMessage() {
-    store.message = { ...defaultMessage }
+    store.message = { ...DEFAULT_MESSAGE }
 }
 
 export function setState(options: SetStateOptions) {

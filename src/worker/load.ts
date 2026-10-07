@@ -1,28 +1,50 @@
 import TS from "typescript"
 
-import type { AdapterTsProject, AdapterTsProjectService, TsPluginQingkuaiConfig } from "qingkuai-language-service"
+import type { CompileIntermediateResult } from "qingkuai/compiler"
+import type {
+    AdapterTsProject,
+    AdapterTsProjectService,
+    TsPluginQingkuaiConfig
+} from "qingkuai-language-service"
 
 import {
     loadTypeScript,
+    USE_LOCAL_PACKAGES,
     loadQingkuaiCompiler,
+    localQingkuaiCompiler,
     loadPrettierAndPlugins,
     qingkuaiLanguageServiceAdapter
 } from "../util/loadpkg"
 import { isQingkuaiFile } from "../util/assert"
-import { fsImplementation, pathImplementation } from "./mock"
-import { Handlers, qingkuaiLsDtsPath, qingkuaiRuntimeDtsPath } from "../util/constants"
-import { interCompileCache, fsMap, setState, handlerResolver, scriptVersion, logger } from "./state"
-import { createDefaultMapFromCDN, createSystem, createVirtualLanguageServiceHost } from "@typescript/vfs"
+import { FS_IMPLEMENTATION, PATH_IMPLEMENTATION } from "./mock"
+import { fsMap, logger, setState, interCompileCache, handlerResolver, scriptVersion } from "./state"
+import {
+    createDefaultMapFromCDN,
+    createSystem,
+    createVirtualLanguageServiceHost
+} from "@typescript/vfs"
+import {
+    Handlers,
+    QINGKUAI_LS_DTS_PATH,
+    QINGKUAI_BRAND_DTS_PATH,
+    QINGKUAI_RUNTIME_DTS_PATH
+} from "../util/constants"
 
 const { TypescriptAdapter, QingkuaiFileInfo } = qingkuaiLanguageServiceAdapter
 
-export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingkuaiVersion: string) {
+export async function loadTypescriptAndQingkuaiCompiler(
+    tsVersion: string,
+    qingkuaiVersion: string
+) {
     // 标记 typesript language service, qingkuai compiler 未加载完成
     setState({
         isReload: true
     })
 
-    const [ts, qingkuaiCompiler] = await Promise.all([loadTypeScript(tsVersion), loadQingkuaiCompiler(qingkuaiVersion)])
+    const [ts, qingkuaiCompiler] = await Promise.all([
+        loadTypeScript(tsVersion),
+        loadQingkuaiCompiler(qingkuaiVersion)
+    ])
     const userPreference: TS.UserPreferences = {
         allowIncompleteCompletions: true,
         allowRenameOfImportPath: true,
@@ -58,20 +80,27 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
         useLabelDetailsInCompletionEntries: true
     }
     const compilerOptions: TS.CompilerOptions = {
+        baseUrl: "/",
         lib: ["esnext", "dom"],
+        allowNonTsExtensions: true,
         target: ts.ScriptTarget.ESNext,
         module: ts.ModuleKind.ESNext,
-        allowNonTsExtensions: true,
         paths: {
-            qingkuai: [qingkuaiRuntimeDtsPath],
-            "qingkuai/language-service": [qingkuaiLsDtsPath]
+            qingkuai: [QINGKUAI_RUNTIME_DTS_PATH],
+            "qingkuai/language-service": [QINGKUAI_LS_DTS_PATH]
         },
         allowImportingTsExtensions: true,
         moduleResolution: ts.ModuleResolutionKind.Bundler
     }
     const qingkuaiConfig: TsPluginQingkuaiConfig = {
-        hoverTipReactiveStatus: true,
-        resolveImportExtension: true
+        allowConstReactive: true,
+        requireReactivityMark: false,
+        interpretiveComments: true,
+        resolveImportExtension: true,
+        reactivityMode: "reactive",
+        whitespace: "trim-collapse",
+        preserveHtmlComments: "always",
+        hoverTipReactiveStatus: true
     }
     const formattingOptions: TS.FormatCodeSettings = {
         convertTabsToSpaces: true,
@@ -105,54 +134,53 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
         if (existing && !update) {
             return existing
         }
-        const sourceFile = ts.createSourceFile(fileName, fsMap.get(fileName)!, ts.ScriptTarget.ESNext)
+        const sourceFile = ts.createSourceFile(
+            fileName,
+            fsMap.get(fileName)!,
+            ts.ScriptTarget.ESNext
+        )
         updateFile(sourceFile)
         return sourceFile
     }
 
-    // 加载 qingkuai/runtime 类型定义文件
-    const qingkuaiRuntimeDtsRes = await fetch(
-        `https://unpkg.com/qingkuai@${qingkuaiVersion}/dist/types/runtime/index.d.ts`
-    )
-    const qingkuaiLsDtsRes = await fetch(
-        `https://unpkg.com/qingkuai@${qingkuaiVersion}/dist/types/language-service/qingkuai.d.ts`
-    )
-    const qingkuaiLsDtsContent = await qingkuaiLsDtsRes.text()
-    const qingkuaiRuntimeDtsContent = await qingkuaiRuntimeDtsRes.text()
-    self.postMessage({
-        name: Handlers.FileLoaded,
-        fileName: qingkuaiRuntimeDtsPath,
-        content: qingkuaiRuntimeDtsContent
-    })
-    self.postMessage({
-        name: Handlers.FileLoaded,
-        fileName: qingkuaiLsDtsPath,
-        content: qingkuaiLsDtsContent
-    })
-    fsMap.set(qingkuaiLsDtsPath, qingkuaiLsDtsContent)
-    fsMap.set(qingkuaiRuntimeDtsPath, qingkuaiRuntimeDtsContent)
+    // 本地包形态动态引入 local-libs，其余形态为 null，构建期随 USE_LOCAL_PACKAGES 的常量折叠整体剔除
+    const localLibs = USE_LOCAL_PACKAGES ? await import("./local-libs") : null
 
-    // 使用@typescript/vsf从cdn加载需要的lib类型声明文件并存入fsMap
-    ;(await createDefaultMapFromCDN(compilerOptions, ts.version, false, ts)).forEach((content, fileName) => {
+    // 加载 qingkuai 的类型定义文件，虚拟目录结构与真实包内布局保持一致
+    const dtsFiles = localLibs
+        ? await localLibs.fetchLocalQingkuaiDtsFiles()
+        : await fetchQingkuaiDtsFiles(qingkuaiVersion)
+    for (const { content, fileName } of dtsFiles) {
+        registerFile(fileName, content)
+    }
+
+    const defaultLibMap = localLibs
+        ? await localLibs.createLocalDefaultLibMap(compilerOptions, ts)
+        : await createDefaultMapFromCDN(compilerOptions, ts.version, false, ts)
+    defaultLibMap.forEach((content, fileName) => {
         if (!content.startsWith("Couldn't find")) {
-            const libFileName = `/node_modules/typescript/lib${fileName}`
-            self.postMessage({
-                content,
-                fileName: libFileName,
-                name: Handlers.FileLoaded
-            })
-            fsMap.set(libFileName, content)
+            registerFile(`/node_modules/typescript/lib${fileName}`, content)
         }
     })
 
-    const libFileNames = Array.from(fsMap.keys())
+    // 代理 typescript 的 sys，使用虚拟文件系统
+    const tsWithSys = new Proxy(ts, {
+        get(target, key, receiver) {
+            if (key === "sys") {
+                return system
+            }
+            return Reflect.get(target, key, receiver)
+        }
+    }) as typeof TS
+
     const system = createSystem(fsMap)
+    const libFileNames = Array.from(fsMap.keys())
     const {
         deleteFile,
         updateFile,
         languageServiceHost: tsLanguageServiceHost
-    } = createVirtualLanguageServiceHost(system, libFileNames, compilerOptions, ts)
-    const tsLanguageService = ts.createLanguageService(tsLanguageServiceHost)
+    } = createVirtualLanguageServiceHost(system, libFileNames, compilerOptions, tsWithSys)
+    const tsLanguageService = tsWithSys.createLanguageService(tsLanguageServiceHost)
 
     const tsProject: AdapterTsProject = Object.assign(tsLanguageServiceHost, {
         getLanguageService: () => tsLanguageService
@@ -163,16 +191,16 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
             return tsProject
         },
         openFiles: new Map(),
-        toPath: fileName => fileName as TS.Path,
-        serverMode: ts.LanguageServiceMode.Semantic
+        toPath: (fileName) => fileName as TS.Path,
+        serverMode: tsWithSys.LanguageServiceMode.Semantic
     }
 
     const adapter = new TypescriptAdapter(
-        ts,
+        tsWithSys,
         logger,
-        fsImplementation,
-        pathImplementation,
-        path => interCompileCache.get(path)!,
+        FS_IMPLEMENTATION,
+        PATH_IMPLEMENTATION,
+        (path) => interCompileCache.get(path)!,
         tsProjectService,
         () => qingkuaiConfig,
         (fileInfo, newContent) => {
@@ -196,16 +224,20 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
                 cr.code,
                 cr.scriptDescriptor.isTS,
                 version + 1,
+                filePathToComponentName(fileName),
                 adapter.getNormalizedPath(fileName),
                 cr.getTypeDelayInterIndexes,
-                cr.identifierStatusInfo,
-                adapter,
+                getIdentifierDescriptionsMap(cr),
+                tsWithSys,
                 cr.indexMap.itos,
                 cr.indexMap.stoi,
-                cr.positions
+                cr.positions,
+                () => sourceFile
             )
             adapter.qingkuaiFileInfos.set(fileInfo.path, fileInfo)
-            fileInfo.confirmTypes()
+            adapter.service.confirmTypes(fileInfo)
+            cr.indexMap.itos = fileInfo.currentItos
+            cr.indexMap.stoi = fileInfo.currentStoi
             fsMap.set(fileName, (sourceFile.text = fileInfo.code))
         } else {
             fsMap.set(fileName, (sourceFile.text = cr.code))
@@ -215,7 +247,7 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
     }
 
     setState({
-        ts,
+        ts: tsWithSys,
         system,
         adapter,
         qingkuaiCompiler,
@@ -223,10 +255,10 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
         tsLanguageServiceHost,
         updateFile: updateSourceFile,
         prettierAndPlugins: await loadPrettierAndPlugins(),
-        deleteFile: fileName => deleteFile(ensureGetSourceFile(fileName))
+        deleteFile: (fileName) => deleteFile(ensureGetSourceFile(fileName))
     })
 
-    tsLanguageServiceHost.getScriptKind = fileName => {
+    tsLanguageServiceHost.getScriptKind = (fileName) => {
         switch (adapter.path.ext(fileName)) {
             case "js": {
                 return ts.ScriptKind.JS
@@ -242,7 +274,7 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
 
     // 代理typescript语言服务
     tsLanguageServiceHost.resolveModuleNameLiterals = (moduleLiterals, containingFile) => {
-        return moduleLiterals.map(literal => {
+        return moduleLiterals.map((literal) => {
             return ts.resolveModuleName(literal.text, containingFile, compilerOptions, system)
         })
     }
@@ -252,4 +284,54 @@ export async function loadTypescriptAndQingkuaiCompiler(tsVersion: string, qingk
 
     // 完成加载
     handlerResolver()
+}
+
+// 文件登记进虚拟文件系统并同步给主线程
+function registerFile(fileName: string, content: string) {
+    self.postMessage({
+        name: Handlers.FileLoaded,
+        fileName,
+        content
+    })
+    fsMap.set(fileName, content)
+}
+
+async function fetchQingkuaiDtsFiles(version: string) {
+    const files = [
+        {
+            path: QINGKUAI_RUNTIME_DTS_PATH,
+            url: `https://unpkg.com/qingkuai@${version}/dist/types/runtime/index.d.ts`
+        },
+        {
+            path: QINGKUAI_BRAND_DTS_PATH,
+            url: `https://unpkg.com/qingkuai@${version}/dist/types/language-service/brand.d.ts`
+        },
+        {
+            path: QINGKUAI_LS_DTS_PATH,
+            url: `https://unpkg.com/qingkuai@${version}/dist/types/language-service/qingkuai.d.ts`
+        }
+    ]
+    const ret: { fileName: string; content: string }[] = []
+    for (const { url, path } of files) {
+        ret.push({ fileName: path, content: await (await fetch(url)).text() })
+    }
+    return ret
+}
+
+// 与 language-service 内部逻辑保持一致：由文件路径推导组件名
+function filePathToComponentName(fileName: string) {
+    const ext = PATH_IMPLEMENTATION.ext(fileName)
+    const base = PATH_IMPLEMENTATION.base(fileName)
+        .slice(0, -ext.length)
+        .replace(/[^a-zA-Z\d]/g, "")
+    return base ? localQingkuaiCompiler.util.kebab2Camel(base, true) : "Anonymous"
+}
+
+// 顶层标识符名称到其描述文本的映射（language-service 旧版本未导出同名工具，此处内联等价实现）
+function getIdentifierDescriptionsMap(cr: CompileIntermediateResult) {
+    const idDescriptions: Record<string, string> = {}
+    for (const key in cr.identifierStatusInfo) {
+        idDescriptions[key] = cr.identifierStatusInfo[key].description
+    }
+    return idDescriptions
 }

@@ -2,11 +2,18 @@ import * as monaco from "monaco-editor-core"
 
 import LanguageWorker from "./worker"
 
-import { languages } from "./configurations"
+import { LANGUAGES } from "./configurations"
 import { isExternalFile } from "../../util/assert"
 import { getClonableModel } from "../../util/sundary"
 import { setState, store, worker } from "../../util/state"
 import { qingkuaiLanguageService } from "../../util/loadpkg"
+
+let codeLensProvider: monaco.languages.CodeLensProvider
+const codeLensChangeEmitter = new monaco.Emitter<monaco.languages.CodeLensProvider>()
+
+export function refreshCodeLens() {
+    codeLensChangeEmitter.fire(codeLensProvider)
+}
 
 export function registerQingkuaiProviders() {
     setState({
@@ -14,12 +21,20 @@ export function registerQingkuaiProviders() {
     })
 
     const languageWorker = worker
-    const languageSelector = languages.map(lang => lang.id)
+    const languageSelector = LANGUAGES.map((lang) => lang.id)
 
     // 加载 typescript language service, qingkuai compiler
-    languageWorker.loadCore(store.tsVersion, store.qingkuaiVersion).then(() => {
-        store.resolving = false
-    })
+    languageWorker.loadCore(store.tsVersion, store.qingkuaiVersion).then(
+        () => {
+            store.resolving = false
+        },
+        (err) => {
+            store.message.right = {
+                type: "error",
+                value: `Failed to load language service: ${err?.message ?? err}`
+            }
+        }
+    )
 
     monaco.languages.registerHoverProvider(languageSelector, {
         async provideHover(model, position, token) {
@@ -89,7 +104,10 @@ export function registerQingkuaiProviders() {
             if (token.isCancellationRequested || isExternalFile(model)) {
                 return null
             }
-            const range = await languageWorker.prepareRename(getClonableModel(model), model.getOffsetAt(position))
+            const range = await languageWorker.prepareRename(
+                getClonableModel(model),
+                model.getOffsetAt(position)
+            )
             return range && { range, text: model.getValueInRange(range) }
         },
 
@@ -97,11 +115,17 @@ export function registerQingkuaiProviders() {
             if (token.isCancellationRequested || isExternalFile(model)) {
                 return null
             }
-            return languageWorker.rename(getClonableModel(model), model.getOffsetAt(position), newName)
+            return languageWorker.rename(
+                getClonableModel(model),
+                model.getOffsetAt(position),
+                newName
+            )
         }
     })
 
-    monaco.languages.registerCodeLensProvider(languageSelector, {
+    codeLensProvider = {
+        onDidChange: codeLensChangeEmitter.event,
+
         async provideCodeLenses(model, token) {
             if (!store.codeLens || token.isCancellationRequested || isExternalFile(model)) {
                 return null
@@ -115,7 +139,8 @@ export function registerQingkuaiProviders() {
             }
             return languageWorker.resolveCodeLens(codeLens as any)
         }
-    })
+    }
+    monaco.languages.registerCodeLensProvider(languageSelector, codeLensProvider)
 
     monaco.languages.registerDocumentFormattingEditProvider(languageSelector, {
         async provideDocumentFormattingEdits(model, _, token) {
@@ -138,7 +163,11 @@ export function registerQingkuaiProviders() {
             if (token.isCancellationRequested || isExternalFile(model)) {
                 return null
             }
-            return languageWorker.getColorPresentations(getClonableModel(model), colorInfo.range, colorInfo.color)
+            return languageWorker.getColorPresentations(
+                getClonableModel(model),
+                colorInfo.range,
+                colorInfo.color
+            )
         }
     })
 
@@ -147,7 +176,31 @@ export function registerQingkuaiProviders() {
             if (token.isCancellationRequested || isExternalFile(model)) {
                 return null
             }
-            return languageWorker.findDefinitions(getClonableModel(model), model.getOffsetAt(position))
+            return languageWorker.findDefinitions(
+                getClonableModel(model),
+                model.getOffsetAt(position)
+            )
+        }
+    })
+
+    monaco.languages.registerTypeDefinitionProvider(languageSelector, {
+        async provideTypeDefinition(model, position, token) {
+            if (token.isCancellationRequested || isExternalFile(model)) {
+                return null
+            }
+            return languageWorker.findTypeDefinitions(
+                getClonableModel(model),
+                model.getOffsetAt(position)
+            )
+        }
+    })
+
+    monaco.languages.registerInlayHintsProvider(languageSelector, {
+        async provideInlayHints(model, range, token) {
+            if (token.isCancellationRequested || isExternalFile(model)) {
+                return null
+            }
+            return languageWorker.getInlayHints(getClonableModel(model))
         }
     })
 
@@ -156,7 +209,10 @@ export function registerQingkuaiProviders() {
             if (token.isCancellationRequested || isExternalFile(model)) {
                 return null
             }
-            return languageWorker.findReferences(getClonableModel(model), model.getOffsetAt(position))
+            return languageWorker.findReferences(
+                getClonableModel(model),
+                model.getOffsetAt(position)
+            )
         }
     })
 
@@ -165,7 +221,10 @@ export function registerQingkuaiProviders() {
             if (token.isCancellationRequested || isExternalFile(model)) {
                 return null
             }
-            return languageWorker.findImplementations(getClonableModel(model), model.getOffsetAt(position))
+            return languageWorker.findImplementations(
+                getClonableModel(model),
+                model.getOffsetAt(position)
+            )
         }
     })
 
