@@ -80,7 +80,7 @@ export const INITIAL_STYLE_CODE = `\
     height: 100vh;
     box-sizing: border-box;
     padding: 16px;
-    background-color: #0a0a0a;
+    background-color: transparent;
 }
 .doc {
     height: 100%;
