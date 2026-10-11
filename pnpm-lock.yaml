@@ -51,8 +51,8 @@ importers:
         specifier: ^1.0.101
         version: 1.0.101
       qingkuai-language-service:
-        specifier: ^1.0.8
-        version: 1.0.17(qingkuai@1.0.101)
+        specifier: ^1.0.19
+        version: 1.0.19(qingkuai@1.0.101)
       sass-embedded:
         specifier: ^1.86.3
         version: 1.87.0
@@ -399,11 +399,6 @@ packages:
     resolution: {integrity: sha512-/FVl766LpUfB5vXgCYOYa0MeV/441Ia99AeICQIQFTY/Nw0roZwULcXpku5i1/m5kt/baz+s4Zogspd839HSMg==}
     engines: {node: '>=14'}
     hasBin: true
-
-  qingkuai-language-service@1.0.17:
-    resolution: {integrity: sha512-8gNg7wsDopwU5I/55LtrOyD2kmf+610N0robBld+B3aREKYZVcTFPPdI9K24BEh9Z4cv5Iy4ACgTZXKGs2S0Yw==}
-    peerDependencies:
-      qingkuai: ^1.0.55
 
   qingkuai-language-service@1.0.19:
     resolution: {integrity: sha512-Q4nDrzpSQR4q19dXaZuwwUeb3AT6PuhcOHSEbN79GHYk8dq2Kfk5c5fLDdJW9Mv8xjhm7atPK+iYxOTx0HjEng==}
@@ -899,13 +894,6 @@ snapshots:
   prettier@3.5.3: {}
 
   prettier@3.9.5: {}
-
-  qingkuai-language-service@1.0.17(qingkuai@1.0.101):
-    dependencies:
-      qingkuai: 1.0.101
-      strip-ansi: 7.2.0
-      vscode-css-languageservice: 6.3.10
-      vscode-uri: 3.2.0
 
   qingkuai-language-service@1.0.19(qingkuai@1.0.101):
     dependencies:
