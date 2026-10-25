@@ -1,6 +1,15 @@
 import * as monaco from "monaco-editor-core"
 
 import {
+    store,
+    worker,
+    setState,
+    fileInfos,
+    leftEditor,
+    rightEditor,
+    cleanMessage
+} from "../util/state"
+import {
     tsVersionsPms,
     INITIAL_STYLE_CODE,
     qingkuaiVersionsPms,
@@ -13,16 +22,9 @@ import { wireLanguageTmGrammars } from "./languages/grammar"
 import { registerQingkuaiProviders } from "./languages/provider"
 import { monacoThemeName } from "./themes/monakai-spectrum-light"
 import { fileUriToPath, getClonableModel } from "../util/sundary"
-import { isExternalFile, isQingkuaiFile, isString } from "../util/assert"
-import {
-    cleanMessage,
-    fileInfos,
-    leftEditor,
-    rightEditor,
-    setState,
-    store,
-    worker
-} from "../util/state"
+import { isCssFile, isExternalFile, isQingkuaiFile, isString } from "../util/assert"
+
+let renderPending = false
 
 const EDITOR_FONT_FAMILY =
     'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace'
@@ -118,6 +120,25 @@ export async function initializeMonacoEditor() {
     })
 }
 
+// monaco 的 setValue 无同内容短路（全量刷写会闪一帧并重置滚动位置）：
+// 内容未变时跳过；真变化时保存/恢复视口，让编译视图跟随编辑时不跳动
+function showCompiledCode(model: monaco.editor.ITextModel, content: string) {
+    if (model.getValue() !== content) {
+        const viewState = rightEditor.saveViewState()
+        model.setValue(content)
+        rightEditor.restoreViewState(viewState)
+    }
+    rightEditor.setModel(model)
+}
+
+// 右侧标签布局由左侧文件类型唯一决定；切文件时须与 activeIndex 映射同步重排，
+// 否则新索引配旧数组会出现中间态（如 style 高亮瞬移到 script 位上）
+function syncRightTabs(fileName: string) {
+    store.rightFileTab.tabs = ["preview"].concat(
+        isQingkuaiFile(fileName) ? ["script", "style"] : isCssFile(fileName) ? ["style"] : []
+    )
+}
+
 export async function refreshCompiledCode(rerender: boolean) {
     const model = leftEditor?.getModel()
     if (!worker || !rightEditor || !model) {
@@ -130,48 +151,69 @@ export async function refreshCompiledCode(rerender: boolean) {
         store.debug,
         store.comment
     )
-    if (!isString(compileResult)) {
-        const targetIsQingkuaiFile = isQingkuaiFile(fileName)
-        store.rightFileTab.tabs = ["preview"].concat(
-            targetIsQingkuaiFile ? ["script", "style"] : []
-        )
-        if (targetIsQingkuaiFile) {
-            if (store.rightFileTab.activeIndex === 1) {
-                const model = fileInfos.get("/compiled/_.ts")!.model
-                model.setValue(compileResult.semiScript)
-                rightEditor.setModel(model)
-            } else if (store.rightFileTab.activeIndex === 2) {
-                const model = fileInfos.get("/compiled/_.css")!.model
-                model.setValue(compileResult.style || "/* no scoped style rule */")
-                rightEditor.setModel(model)
-            }
-        } else if (rerender) {
-            await refreshEntryCompileResult(fileName)
-        }
-        if (rerender && store.rightFileTab.activeIndex === 0) {
-            const fileInfo = fileInfos.get(fileName)!
-            fileInfos.set(fileName, {
-                model: fileInfo.model,
-                style: compileResult.style,
-                script: compileResult.script,
-                semiScript: compileResult.semiScript
-            })
-            render()
-        }
-    } else {
+    if (isString(compileResult)) {
         store.message.right = {
             type: "error",
             value: `Compile failed with a fatal error: ${compileResult}`
         }
+        return
+    }
+
+    const targetIsQingkuaiFile = isQingkuaiFile(fileName)
+    const targetIsCssFile = isCssFile(fileName)
+    syncRightTabs(fileName)
+
+    if (targetIsQingkuaiFile) {
+        if (store.rightFileTab.activeIndex === 1) {
+            showCompiledCode(fileInfos.get("/compiled/_.ts")!.model, compileResult.semiScript)
+        } else if (store.rightFileTab.activeIndex === 2) {
+            showCompiledCode(
+                fileInfos.get("/compiled/_.css")!.model,
+                compileResult.style || "/* no scoped style rule */"
+            )
+        }
+    } else {
+        // 纯 css 文件没有自己的运行时样式，它的“编译产物”是引用它的入口组件 scoped 后的样式
+        if (rerender) {
+            await refreshEntryCompileResult(fileName)
+        }
+        if (targetIsCssFile && store.rightFileTab.activeIndex === 1) {
+            const entryInfo = getEntryInfo(fileName)
+            showCompiledCode(
+                fileInfos.get("/compiled/_.css")!.model,
+                entryInfo?.style || "/* no scoped style rule */"
+            )
+        }
+    }
+
+    // 编辑发生在非 preview 标签下时先记欠账，切回 preview 时补一次渲染
+    if (rerender && store.rightFileTab.activeIndex !== 0) {
+        renderPending = true
+    }
+    if (store.rightFileTab.activeIndex === 0 && (rerender || renderPending)) {
+        const fileInfo = fileInfos.get(fileName)!
+        fileInfos.set(fileName, {
+            model: fileInfo.model,
+            style: compileResult.style,
+            script: compileResult.script,
+            semiScript: compileResult.semiScript
+        })
+        renderPending = false
+        render()
     }
 }
 
-async function refreshEntryCompileResult(excludedFileName: string) {
+// 除 excludedFileName 外的入口组件文件（.qk）信息
+function getEntryInfo(excludedFileName: string) {
     const entryName = store.leftFileTab.tabs.find(
         (item) => isQingkuaiFile(item) && item !== excludedFileName
     )
-    const entryInfo = entryName && fileInfos.get(entryName)
-    if (!entryName || !entryInfo) {
+    return entryName === undefined ? undefined : fileInfos.get(entryName)
+}
+
+async function refreshEntryCompileResult(excludedFileName: string) {
+    const entryInfo = getEntryInfo(excludedFileName)
+    if (!entryInfo) {
         return
     }
 
@@ -181,7 +223,7 @@ async function refreshEntryCompileResult(excludedFileName: string) {
         store.comment
     )
     if (!isString(entryResult)) {
-        fileInfos.set(entryName, {
+        fileInfos.set(fileUriToPath(entryInfo.model.uri.toString()).slice(1), {
             model: entryInfo.model,
             style: entryResult.style,
             script: entryResult.script,
@@ -193,7 +235,7 @@ async function refreshEntryCompileResult(excludedFileName: string) {
 export function addModel(languageId: string, fileName: string) {
     const model = monaco.editor.createModel("", languageId, monaco.Uri.file("/" + fileName))
     fileInfos.set(fileName, { ...DEFAULT_RUNTIME_COMPILE_RESULT, model })
-    return (leftEditor.setModel(model), focusAndSetPosition(), model)
+    return leftEditor.setModel(model), focusAndSetPosition(), model
 }
 
 export function changeModel(fileName: string) {
@@ -204,7 +246,17 @@ export function changeModel(fileName: string) {
         focusAndSetPosition()
         publishDiagnostics(model, false)
         store.leftFileTab.activeIndex = index
-        if (!isQingkuaiFile(fileName)) {
+
+        // 右侧尽量保持当前视图：视图在新文件类型下仍可用则保留位置，否则回退 preview。
+        // 视图名须从旧布局读取，标签布局与索引再同步重排，避免中间态高亮错位
+        const currentView = store.rightFileTab.tabs[store.rightFileTab.activeIndex] || "preview"
+        syncRightTabs(fileName)
+        if (isQingkuaiFile(fileName)) {
+            store.rightFileTab.activeIndex =
+                currentView === "script" ? 1 : currentView === "style" ? 2 : 0
+        } else if (isCssFile(fileName)) {
+            store.rightFileTab.activeIndex = currentView === "style" ? 1 : 0
+        } else {
             store.rightFileTab.activeIndex = 0
         }
     }

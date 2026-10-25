@@ -1,6 +1,10 @@
 import type Monaco from "monaco-editor-core"
 import { EXTERNAL_FILE_RE } from "./constants"
 
+export function isCssFile(fileName: string) {
+    return fileName.endsWith(".css")
+}
+
 export function isArray(v: any): v is any[] {
     return Array.isArray(v)
 }
