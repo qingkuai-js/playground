@@ -8,7 +8,7 @@ import { store } from "./state"
 import { lastElem } from "./sundary"
 
 export async function listVersions(name: "qingkuai" | "typescript") {
-    const min = name === "qingkuai" ? "1.0.101" : "5.6.0"
+    const min = name === "qingkuai" ? "1.0.103" : "5.6.0"
     const res = await fetch(`https://registry.npmmirror.com/${name}`)
     const versions = (await res.json()).versions ?? {}
     const filtered = Object.keys(versions).filter((k) => {

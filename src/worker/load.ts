@@ -1,12 +1,18 @@
-import TS from "typescript"
+import type TS from "typescript"
 
-import type { CompileIntermediateResult } from "qingkuai/compiler"
 import type {
     AdapterTsProject,
     AdapterTsProjectService,
     TsPluginQingkuaiConfig
 } from "qingkuai-language-service"
+import type { CompileIntermediateResult } from "qingkuai/compiler"
 
+import {
+    Handlers,
+    QINGKUAI_LS_DTS_PATH,
+    QINGKUAI_BRAND_DTS_PATH,
+    QINGKUAI_RUNTIME_DTS_PATH
+} from "../util/constants"
 import {
     loadTypeScript,
     USE_LOCAL_PACKAGES,
@@ -15,20 +21,14 @@ import {
     loadPrettierAndPlugins,
     qingkuaiLanguageServiceAdapter
 } from "../util/loadpkg"
+import {
+    createSystem,
+    createDefaultMapFromCDN,
+    createVirtualLanguageServiceHost
+} from "@typescript/vfs"
 import { isQingkuaiFile } from "../util/assert"
 import { FS_IMPLEMENTATION, PATH_IMPLEMENTATION } from "./mock"
 import { fsMap, logger, setState, interCompileCache, handlerResolver, scriptVersion } from "./state"
-import {
-    createDefaultMapFromCDN,
-    createSystem,
-    createVirtualLanguageServiceHost
-} from "@typescript/vfs"
-import {
-    Handlers,
-    QINGKUAI_LS_DTS_PATH,
-    QINGKUAI_BRAND_DTS_PATH,
-    QINGKUAI_RUNTIME_DTS_PATH
-} from "../util/constants"
 
 const { TypescriptAdapter, QingkuaiFileInfo } = qingkuaiLanguageServiceAdapter
 
@@ -45,6 +45,12 @@ export async function loadTypescriptAndQingkuaiCompiler(
         loadTypeScript(tsVersion),
         loadQingkuaiCompiler(qingkuaiVersion)
     ])
+
+    // 复用宿主已加载的 typescript：编译器 1.0.103 起不自带 TS 实现且浏览器内无法自行加载，
+    // CDN 与静态打包两份编译器副本相互独立，需分别注入（候选版本下限见 loadpkg 的 listVersions）
+    qingkuaiCompiler.setTypeScript(ts)
+    localQingkuaiCompiler.setTypeScript(ts)
+
     const userPreference: TS.UserPreferences = {
         allowIncompleteCompletions: true,
         allowRenameOfImportPath: true,

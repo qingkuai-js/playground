@@ -19,7 +19,7 @@ importers:
     devDependencies:
       '@qingkuai/cli':
         specifier: 1.0.1
-        version: 1.0.1(@types/node@22.15.2)(qingkuai@1.0.102)(sass-embedded@1.87.0)
+        version: 1.0.1(@types/node@22.15.2)(qingkuai@1.0.103)(sass-embedded@1.87.0)
       '@types/css-tree':
         specifier: ^2.3.10
         version: 2.3.10
@@ -32,6 +32,9 @@ importers:
       '@typescript/vfs':
         specifier: ^1.6.1
         version: 1.6.1(patch_hash=pabs3ajumhhwws66rotpguhb3y)(typescript@6.0.3)
+      '@vscode/emmet-helper':
+        specifier: ^2.11.0
+        version: 2.11.0
       monaco-editor-textmate:
         specifier: ^4.0.0
         version: 4.0.0(monaco-editor@0.52.2)(monaco-textmate@3.0.1(onigasm@2.2.5))
@@ -46,13 +49,13 @@ importers:
         version: 3.5.3
       prettier-plugin-qingkuai:
         specifier: ^1.0.46
-        version: 1.0.46(prettier@3.5.3)(qingkuai@1.0.102)
+        version: 1.0.46(prettier@3.5.3)(qingkuai@1.0.103)
       qingkuai:
-        specifier: ^1.0.102
-        version: 1.0.102
+        specifier: ^1.0.103
+        version: 1.0.103
       qingkuai-language-service:
-        specifier: ^1.0.19
-        version: 1.0.19(qingkuai@1.0.102)
+        specifier: ^1.0.21
+        version: 1.0.21(qingkuai@1.0.103)
       sass-embedded:
         specifier: ^1.86.3
         version: 1.87.0
@@ -81,6 +84,15 @@ packages:
 
   '@bufbuild/protobuf@2.2.5':
     resolution: {integrity: sha512-/g5EzJifw5GF8aren8wZ/G5oMuPoGeS6MQD3ca8ddcvdXR5UELUfdTZITCGNhNXynY/AYl3Z4plmxdj/tRl/hQ==}
+
+  '@emmetio/abbreviation@2.3.3':
+    resolution: {integrity: sha512-mgv58UrU3rh4YgbE/TzgLQwJ3pFsHHhCLqY20aJq+9comytTXUDNGG/SMtSeMJdkpxgXSXunBGLD8Boka3JyVA==}
+
+  '@emmetio/css-abbreviation@2.1.8':
+    resolution: {integrity: sha512-s9yjhJ6saOO/uk1V74eifykk2CBYi01STTK3WlXWGOepyKa23ymJ053+DNQjpFcy1ingpaO7AxCcwLvHFY9tuw==}
+
+  '@emmetio/scanner@1.0.4':
+    resolution: {integrity: sha512-IqRuJtQff7YHHBk4G8YZ45uB9BaAGcwQeVzgj/zj8/UdOhtQpEIupUhSk8dys6spFIWVZVeK20CzGEnqR5SbqA==}
 
   '@jridgewell/sourcemap-codec@1.6.0':
     resolution: {integrity: sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw==}
@@ -136,36 +148,42 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rolldown/binding-linux-arm64-musl@1.2.13':
     resolution: {integrity: sha512-xU+Kvv9N2A3SY35zFh1FWWNjxbadE/BKeqnkXe7vScU4GZsw757BlVmDLITZEq8DPpk6m7uoDYkK7P+x/uU5Ow==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rolldown/binding-linux-ppc64-gnu@1.2.13':
     resolution: {integrity: sha512-XMk/hnhh25oQ756Lclb1Q11h4ll0xC0Esa5w4Vzp+mAE2S3AGJgeM0SonrIgY8fHhjarb6hcoTuwoFG0VVP2ig==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rolldown/binding-linux-s390x-gnu@1.2.13':
     resolution: {integrity: sha512-U1BoTHYmlywE2n3HUWjzZ+8EQsKr+OwpxYuDWaubx42tUL8QSL7nOqRz/NVHanibbFP3M1Rxuprz/wNcbMKjqw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rolldown/binding-linux-x64-gnu@1.2.13':
     resolution: {integrity: sha512-J4cm80Pc6wEwV5AZ42o62sIQgDk+Y7R2s646jIwuvO+4V46QB58N4vVuMPWCBaNgursXLpmUWJV//WQAkPvHBQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rolldown/binding-linux-x64-musl@1.2.13':
     resolution: {integrity: sha512-W0euZS40U4V6JkmEnVCIX9mcsL6cbXQ4X8c2w+MMOIjFg68TXUW+u3RT+2e1t1pv9mg/EP3pDtK3POXdQ7Rxyw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rolldown/binding-openharmony-arm64@1.2.13':
     resolution: {integrity: sha512-do/AF/4n9MRshia3a5aXoy8xM2c6mgfT6D7H/dY6my5z+hfCIR4ab7mk4IRj++nsEQpKy39kd0DQnDq+r692tw==}
@@ -202,6 +220,9 @@ packages:
     peerDependencies:
       typescript: '*'
 
+  '@vscode/emmet-helper@2.11.0':
+    resolution: {integrity: sha512-QLxjQR3imPZPQltfbWRnHU6JecWTF1QSWhx3GAKQpslx7y3Dp6sIIXhKjiUJ/BR9FX8PVthjr9PD6pNwOJfAzw==}
+
   '@vscode/l10n@0.0.18':
     resolution: {integrity: sha512-KYSIHVmslkaCDyw013pphY+d7x1qV8IZupYfeIfzNA+nsaWHbn5uPuQRvdRFsa9zFzGeudPuoGoZ1Op4jrJXIQ==}
 
@@ -233,6 +254,9 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
+  emmet@2.4.11:
+    resolution: {integrity: sha512-23QPJB3moh/U9sT4rQzGgeyyGIrcM+GH5uVYg2C6wZIxAIJq7Ng3QLT79tl8FUwDXhyq9SusfknOrofAKqvgyQ==}
+
   entities@8.1.0:
     resolution: {integrity: sha512-kxL7msIffSuh9aaFAMD7rxAIuTRMAHMeBtgHW2yUdWw732ZNh4MehkF2gdjvtdmikkaIP9bFDDJOPlsvm7avrA==}
     engines: {node: '>=20.19.0'}
@@ -263,6 +287,9 @@ packages:
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
+
+  jsonc-parser@2.3.1:
+    resolution: {integrity: sha512-H8jvkz1O50L3dMZCsLqiuB2tA7muqbSg1AtGEkN0leAqGjsUzDJir3Zwr02BhqdcITPg3ei3mZ+HjMocAknhhg==}
 
   lightningcss-android-arm64@1.33.0:
     resolution: {integrity: sha512-gEpRTalKdosp4Bb8qWtc2iOgE5SeIHlpS1up9bFq2wAyYhl1UdTObYiHe98zEM9SQvSoqQZ1IQD0JNpg3Ml5pg==}
@@ -299,24 +326,28 @@ packages:
     engines: {node: '>= 12.0.0'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   lightningcss-linux-arm64-musl@1.33.0:
     resolution: {integrity: sha512-yiO5ROMuYQgXbC60yjZU5CYSFZGKXL0HFATXt9mHJn1+zW55oCtMI9NfcVhYLMFDL7gV7oBPon/EmMMGg2OvtQ==}
     engines: {node: '>= 12.0.0'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   lightningcss-linux-x64-gnu@1.33.0:
     resolution: {integrity: sha512-ar+Ju7LmcN0Jo4FpL4hpFybwNG9/3A/Br5KW2n2jyODg3MEZXaDYADdemoNS+BDNfMgKvylJLj4S5tyRActuAg==}
     engines: {node: '>= 12.0.0'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   lightningcss-linux-x64-musl@1.33.0:
     resolution: {integrity: sha512-RYiYbkokw0trfKqqzfF55lginwEPrD3OJDfTuJzFs1MK6iFnDenaz1fqLLtX4ITG3OktJQXOeTaw1awrBAlZPw==}
     engines: {node: '>= 12.0.0'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   lightningcss-win32-arm64-msvc@1.33.0:
     resolution: {integrity: sha512-1K+MPfLSFVpphzpdbfkhlWk6wBrTObBzS2T6db10PNOZgR9GoVsAWzwNyuhUYYbTp23j+4RrncfujZ4uAzXvwA==}
@@ -405,8 +436,13 @@ packages:
     peerDependencies:
       qingkuai: ^1.0.84
 
-  qingkuai@1.0.102:
-    resolution: {integrity: sha512-/TEO4jJsaPEQMDLMLxpaMa0+QF1v+t9ENsKAzKjzhM6E+PH1z420wGe9YifCaujbDak78nuKwrsgi2vY0aWk2g==}
+  qingkuai-language-service@1.0.21:
+    resolution: {integrity: sha512-NxlnYy9Ob+H7dnwlbNaNduHH2+ACHpHpH8omPAPbMtQyrPDcI1jOYApR0oYv1DR1IxiNbQ2oBqYJ27CYsUmu7w==}
+    peerDependencies:
+      qingkuai: ^1.0.103
+
+  qingkuai@1.0.103:
+    resolution: {integrity: sha512-COAC25PeH+W5I/MA59jPYpDv51unS7aLdyo8/5Ab3UJMwwbJFC84Rrc1Csq7DeG78TImU5axBEKVV9vV5/8wOQ==}
 
   rolldown@1.2.13:
     resolution: {integrity: sha512-/5apOkwWxtACcQtZ5WlrAsKS4JwXVThQPJZ3RqIruRY9UG9M8e0VlXN068xum/JRKA4aIUoJ13ghe/kGCvidiQ==}
@@ -663,19 +699,29 @@ snapshots:
 
   '@bufbuild/protobuf@2.2.5': {}
 
+  '@emmetio/abbreviation@2.3.3':
+    dependencies:
+      '@emmetio/scanner': 1.0.4
+
+  '@emmetio/css-abbreviation@2.1.8':
+    dependencies:
+      '@emmetio/scanner': 1.0.4
+
+  '@emmetio/scanner@1.0.4': {}
+
   '@jridgewell/sourcemap-codec@1.6.0': {}
 
   '@oxc-project/types@0.153.0': {}
 
-  '@qingkuai/cli@1.0.1(@types/node@22.15.2)(qingkuai@1.0.102)(sass-embedded@1.87.0)':
+  '@qingkuai/cli@1.0.1(@types/node@22.15.2)(qingkuai@1.0.103)(sass-embedded@1.87.0)':
     dependencies:
       prettier: 3.9.5
-      prettier-plugin-qingkuai: 1.0.46(prettier@3.9.5)(qingkuai@1.0.102)
-      qingkuai: 1.0.102
-      qingkuai-language-service: 1.0.19(qingkuai@1.0.102)
+      prettier-plugin-qingkuai: 1.0.46(prettier@3.9.5)(qingkuai@1.0.103)
+      qingkuai: 1.0.103
+      qingkuai-language-service: 1.0.19(qingkuai@1.0.103)
       typescript: 6.0.3
       vite: 8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0)
-      vite-plugin-qingkuai: 1.0.27(qingkuai@1.0.102)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0))
+      vite-plugin-qingkuai: 1.0.27(qingkuai@1.0.103)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0))
     transitivePeerDependencies:
       - '@types/node'
       - '@vitejs/devtools'
@@ -752,6 +798,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@vscode/emmet-helper@2.11.0':
+    dependencies:
+      emmet: 2.4.11
+      jsonc-parser: 2.3.1
+      vscode-languageserver-textdocument: 1.0.15
+      vscode-languageserver-types: 3.17.5
+      vscode-uri: 3.2.0
+
   '@vscode/l10n@0.0.18': {}
 
   ansi-regex@6.4.0: {}
@@ -767,6 +821,11 @@ snapshots:
       ms: 2.1.3
 
   detect-libc@2.1.2: {}
+
+  emmet@2.4.11:
+    dependencies:
+      '@emmetio/abbreviation': 2.3.3
+      '@emmetio/css-abbreviation': 2.1.8
 
   entities@8.1.0: {}
 
@@ -784,6 +843,8 @@ snapshots:
   immutable@5.1.1: {}
 
   js-tokens@4.0.0: {}
+
+  jsonc-parser@2.3.1: {}
 
   lightningcss-android-arm64@1.33.0:
     optional: true
@@ -877,34 +938,43 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.2
 
-  prettier-plugin-qingkuai@1.0.46(prettier@3.5.3)(qingkuai@1.0.102):
+  prettier-plugin-qingkuai@1.0.46(prettier@3.5.3)(qingkuai@1.0.103):
     dependencies:
       '@babel/code-frame': 7.29.7
       lines-and-columns: 2.0.4
       prettier: 3.5.3
-      qingkuai: 1.0.102
+      qingkuai: 1.0.103
 
-  prettier-plugin-qingkuai@1.0.46(prettier@3.9.5)(qingkuai@1.0.102):
+  prettier-plugin-qingkuai@1.0.46(prettier@3.9.5)(qingkuai@1.0.103):
     dependencies:
       '@babel/code-frame': 7.29.7
       lines-and-columns: 2.0.4
       prettier: 3.9.5
-      qingkuai: 1.0.102
+      qingkuai: 1.0.103
 
   prettier@3.5.3: {}
 
   prettier@3.9.5: {}
 
-  qingkuai-language-service@1.0.19(qingkuai@1.0.102):
+  qingkuai-language-service@1.0.19(qingkuai@1.0.103):
     dependencies:
-      qingkuai: 1.0.102
+      qingkuai: 1.0.103
       strip-ansi: 7.2.0
       vscode-css-languageservice: 6.3.10
       vscode-languageserver-textdocument: 1.0.15
       vscode-languageserver-types: 3.17.5
       vscode-uri: 3.2.0
 
-  qingkuai@1.0.102:
+  qingkuai-language-service@1.0.21(qingkuai@1.0.103):
+    dependencies:
+      qingkuai: 1.0.103
+      strip-ansi: 7.2.0
+      vscode-css-languageservice: 6.3.10
+      vscode-languageserver-textdocument: 1.0.15
+      vscode-languageserver-types: 3.17.5
+      vscode-uri: 3.2.0
+
+  qingkuai@1.0.103:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
       entities: 8.1.0
@@ -1060,13 +1130,13 @@ snapshots:
 
   varint@6.0.0: {}
 
-  vite-plugin-qingkuai@1.0.27(qingkuai@1.0.102)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0)):
+  vite-plugin-qingkuai@1.0.27(qingkuai@1.0.103)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0)):
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
       lines-and-columns: 2.0.4
       postcss: 8.5.29
       postcss-selector-parser: 7.1.6
-      qingkuai: 1.0.102
+      qingkuai: 1.0.103
       source-map-js: 1.2.2
       vite: 8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0)
 
