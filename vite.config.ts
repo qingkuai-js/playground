@@ -4,8 +4,8 @@ import fs from "node:fs"
 import path from "node:path"
 import { defineConfig, transformWithOxc } from "@qingkuai/cli/vite"
 
-const LANGUAGE_SERVICE_EXTERNALIZED_WARNING_RE =
-    /has been externalized for browser compatibility, imported by "[^"]*language-service\/dist\//
+const BROWSER_EXTERNALIZED_WARNING_RE =
+    /has been externalized for browser compatibility, imported by "[^"]*(?:language-service\/dist|qingkuai\/dist|emmet-helper\/lib)\//
 
 export default defineConfig({
     worker: {
@@ -14,7 +14,7 @@ export default defineConfig({
     build: {
         rollupOptions: {
             onLog(level, log, defaultHandler) {
-                if (LANGUAGE_SERVICE_EXTERNALIZED_WARNING_RE.test(log.message)) {
+                if (BROWSER_EXTERNALIZED_WARNING_RE.test(log.message)) {
                     return
                 }
                 defaultHandler(level, log)
