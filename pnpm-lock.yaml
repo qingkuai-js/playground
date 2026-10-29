@@ -18,8 +18,8 @@ importers:
         version: 0.52.2
     devDependencies:
       '@qingkuai/cli':
-        specifier: 1.0.1
-        version: 1.0.1(@types/node@22.15.2)(qingkuai@1.0.104)(sass-embedded@1.87.0)
+        specifier: 1.0.4
+        version: 1.0.4(@types/node@22.15.2)(qingkuai@1.0.104)(sass-embedded@1.87.0)
       '@types/css-tree':
         specifier: ^2.3.10
         version: 2.3.10
@@ -100,12 +100,12 @@ packages:
   '@oxc-project/types@0.153.0':
     resolution: {integrity: sha512-jSNrRIyvPVLL5E1z/tS5zLAprosGz/FuI1PWwEOz59j3E4TTTzSpqKb/RDGqJhhW0QHYISGXxq582wGx6T11Tw==}
 
-  '@qingkuai/cli@1.0.1':
-    resolution: {integrity: sha512-mOeEmp7V39YPhfUrN7TsUjdcWP5eolcZ6wKhSxJ7Swsf8ZFEVLgtoNRoqniCOQVj3YNaotGdVtlCcs89qxGR+w==}
+  '@qingkuai/cli@1.0.4':
+    resolution: {integrity: sha512-L4IuSZXgfZVxP+u9akVnNVNC0v8PZ+me9b0I51LznOTv0rXMNQ9CqakFNYpfhcLvB9zV1Q2aLOaPmqXvKg0BUg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
-      qingkuai: ~1.0.101
+      qingkuai: ~1.0.104
 
   '@rolldown/binding-android-arm-eabi@1.2.13':
     resolution: {integrity: sha512-Vu/NICrgdRvUOeaJZIyB2FP63s6fO/4ud5l8dXmxDx9yDyn+mN0y+gsvsVviSli+T361Aqo0h46EuMoobrwawA==}
@@ -431,11 +431,6 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
 
-  qingkuai-language-service@1.0.19:
-    resolution: {integrity: sha512-Q4nDrzpSQR4q19dXaZuwwUeb3AT6PuhcOHSEbN79GHYk8dq2Kfk5c5fLDdJW9Mv8xjhm7atPK+iYxOTx0HjEng==}
-    peerDependencies:
-      qingkuai: ^1.0.84
-
   qingkuai-language-service@1.0.21:
     resolution: {integrity: sha512-NxlnYy9Ob+H7dnwlbNaNduHH2+ACHpHpH8omPAPbMtQyrPDcI1jOYApR0oYv1DR1IxiNbQ2oBqYJ27CYsUmu7w==}
     peerDependencies:
@@ -623,10 +618,10 @@ packages:
   varint@6.0.0:
     resolution: {integrity: sha512-cXEIW6cfr15lFv563k4GuVuW/fiwjknytD37jIOLSdSWuOI6WnO/oKwmP2FQTU2l01LP8/M5TSAJpzUaGe3uWg==}
 
-  vite-plugin-qingkuai@1.0.27:
-    resolution: {integrity: sha512-hM/p2/4fY9JsxRdWBHnBnzt7NPwzo2pUtCRVTlaUaHjsA3l9m15Xa2OjBbY/635/hcDpmZm9SQZRkmxJq6z9Jw==}
+  vite-plugin-qingkuai@1.0.29:
+    resolution: {integrity: sha512-M6zXnxVFnnPTjw1kNipPUsXUGStH8BpXRqXFI0rw/sAIfaPM/wPGqcmpiT8yCgQ4rus1PIBipU/7zqin9aIiTg==}
     peerDependencies:
-      qingkuai: '>=1.0.50'
+      qingkuai: '>=1.0.104'
       vite: '>=6.2.4 <9'
 
   vite@8.3.2:
@@ -713,15 +708,16 @@ snapshots:
 
   '@oxc-project/types@0.153.0': {}
 
-  '@qingkuai/cli@1.0.1(@types/node@22.15.2)(qingkuai@1.0.104)(sass-embedded@1.87.0)':
+  '@qingkuai/cli@1.0.4(@types/node@22.15.2)(qingkuai@1.0.104)(sass-embedded@1.87.0)':
     dependencies:
+      '@vscode/emmet-helper': 2.11.0
       prettier: 3.9.5
       prettier-plugin-qingkuai: 1.0.46(prettier@3.9.5)(qingkuai@1.0.104)
       qingkuai: 1.0.104
-      qingkuai-language-service: 1.0.19(qingkuai@1.0.104)
+      qingkuai-language-service: 1.0.21(qingkuai@1.0.104)
       typescript: 6.0.3
       vite: 8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0)
-      vite-plugin-qingkuai: 1.0.27(qingkuai@1.0.104)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0))
+      vite-plugin-qingkuai: 1.0.29(qingkuai@1.0.104)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0))
     transitivePeerDependencies:
       - '@types/node'
       - '@vitejs/devtools'
@@ -956,15 +952,6 @@ snapshots:
 
   prettier@3.9.5: {}
 
-  qingkuai-language-service@1.0.19(qingkuai@1.0.104):
-    dependencies:
-      qingkuai: 1.0.104
-      strip-ansi: 7.2.0
-      vscode-css-languageservice: 6.3.10
-      vscode-languageserver-textdocument: 1.0.15
-      vscode-languageserver-types: 3.17.5
-      vscode-uri: 3.2.0
-
   qingkuai-language-service@1.0.21(qingkuai@1.0.104):
     dependencies:
       qingkuai: 1.0.104
@@ -1130,7 +1117,7 @@ snapshots:
 
   varint@6.0.0: {}
 
-  vite-plugin-qingkuai@1.0.27(qingkuai@1.0.104)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0)):
+  vite-plugin-qingkuai@1.0.29(qingkuai@1.0.104)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0)):
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
       lines-and-columns: 2.0.4
