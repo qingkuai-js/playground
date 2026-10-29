@@ -96,8 +96,6 @@ export async function render() {
                 }
             }
 
-            window.__qk_max_schedule_depth = 300
-
             window.onerror=msg=>{
                 window.parent.postMessage({
                     msg,

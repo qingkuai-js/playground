@@ -19,7 +19,7 @@ importers:
     devDependencies:
       '@qingkuai/cli':
         specifier: 1.0.1
-        version: 1.0.1(@types/node@22.15.2)(qingkuai@1.0.103)(sass-embedded@1.87.0)
+        version: 1.0.1(@types/node@22.15.2)(qingkuai@1.0.104)(sass-embedded@1.87.0)
       '@types/css-tree':
         specifier: ^2.3.10
         version: 2.3.10
@@ -49,13 +49,13 @@ importers:
         version: 3.5.3
       prettier-plugin-qingkuai:
         specifier: ^1.0.46
-        version: 1.0.46(prettier@3.5.3)(qingkuai@1.0.103)
+        version: 1.0.46(prettier@3.5.3)(qingkuai@1.0.104)
       qingkuai:
-        specifier: ^1.0.103
-        version: 1.0.103
+        specifier: ^1.0.104
+        version: 1.0.104
       qingkuai-language-service:
         specifier: ^1.0.21
-        version: 1.0.21(qingkuai@1.0.103)
+        version: 1.0.21(qingkuai@1.0.104)
       sass-embedded:
         specifier: ^1.86.3
         version: 1.87.0
@@ -441,8 +441,8 @@ packages:
     peerDependencies:
       qingkuai: ^1.0.103
 
-  qingkuai@1.0.103:
-    resolution: {integrity: sha512-COAC25PeH+W5I/MA59jPYpDv51unS7aLdyo8/5Ab3UJMwwbJFC84Rrc1Csq7DeG78TImU5axBEKVV9vV5/8wOQ==}
+  qingkuai@1.0.104:
+    resolution: {integrity: sha512-7UJYOz/s5+CTFLk9GbCXDsGGNIO+h5APUMSgrgZ5rnW6ELJS/002Mrek7B6kHUiVaRNiJiAETdl6nis9q9v0kg==}
 
   rolldown@1.2.13:
     resolution: {integrity: sha512-/5apOkwWxtACcQtZ5WlrAsKS4JwXVThQPJZ3RqIruRY9UG9M8e0VlXN068xum/JRKA4aIUoJ13ghe/kGCvidiQ==}
@@ -713,15 +713,15 @@ snapshots:
 
   '@oxc-project/types@0.153.0': {}
 
-  '@qingkuai/cli@1.0.1(@types/node@22.15.2)(qingkuai@1.0.103)(sass-embedded@1.87.0)':
+  '@qingkuai/cli@1.0.1(@types/node@22.15.2)(qingkuai@1.0.104)(sass-embedded@1.87.0)':
     dependencies:
       prettier: 3.9.5
-      prettier-plugin-qingkuai: 1.0.46(prettier@3.9.5)(qingkuai@1.0.103)
-      qingkuai: 1.0.103
-      qingkuai-language-service: 1.0.19(qingkuai@1.0.103)
+      prettier-plugin-qingkuai: 1.0.46(prettier@3.9.5)(qingkuai@1.0.104)
+      qingkuai: 1.0.104
+      qingkuai-language-service: 1.0.19(qingkuai@1.0.104)
       typescript: 6.0.3
       vite: 8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0)
-      vite-plugin-qingkuai: 1.0.27(qingkuai@1.0.103)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0))
+      vite-plugin-qingkuai: 1.0.27(qingkuai@1.0.104)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0))
     transitivePeerDependencies:
       - '@types/node'
       - '@vitejs/devtools'
@@ -938,43 +938,43 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.2
 
-  prettier-plugin-qingkuai@1.0.46(prettier@3.5.3)(qingkuai@1.0.103):
+  prettier-plugin-qingkuai@1.0.46(prettier@3.5.3)(qingkuai@1.0.104):
     dependencies:
       '@babel/code-frame': 7.29.7
       lines-and-columns: 2.0.4
       prettier: 3.5.3
-      qingkuai: 1.0.103
+      qingkuai: 1.0.104
 
-  prettier-plugin-qingkuai@1.0.46(prettier@3.9.5)(qingkuai@1.0.103):
+  prettier-plugin-qingkuai@1.0.46(prettier@3.9.5)(qingkuai@1.0.104):
     dependencies:
       '@babel/code-frame': 7.29.7
       lines-and-columns: 2.0.4
       prettier: 3.9.5
-      qingkuai: 1.0.103
+      qingkuai: 1.0.104
 
   prettier@3.5.3: {}
 
   prettier@3.9.5: {}
 
-  qingkuai-language-service@1.0.19(qingkuai@1.0.103):
+  qingkuai-language-service@1.0.19(qingkuai@1.0.104):
     dependencies:
-      qingkuai: 1.0.103
+      qingkuai: 1.0.104
       strip-ansi: 7.2.0
       vscode-css-languageservice: 6.3.10
       vscode-languageserver-textdocument: 1.0.15
       vscode-languageserver-types: 3.17.5
       vscode-uri: 3.2.0
 
-  qingkuai-language-service@1.0.21(qingkuai@1.0.103):
+  qingkuai-language-service@1.0.21(qingkuai@1.0.104):
     dependencies:
-      qingkuai: 1.0.103
+      qingkuai: 1.0.104
       strip-ansi: 7.2.0
       vscode-css-languageservice: 6.3.10
       vscode-languageserver-textdocument: 1.0.15
       vscode-languageserver-types: 3.17.5
       vscode-uri: 3.2.0
 
-  qingkuai@1.0.103:
+  qingkuai@1.0.104:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
       entities: 8.1.0
@@ -1130,13 +1130,13 @@ snapshots:
 
   varint@6.0.0: {}
 
-  vite-plugin-qingkuai@1.0.27(qingkuai@1.0.103)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0)):
+  vite-plugin-qingkuai@1.0.27(qingkuai@1.0.104)(vite@8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0)):
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
       lines-and-columns: 2.0.4
       postcss: 8.5.29
       postcss-selector-parser: 7.1.6
-      qingkuai: 1.0.103
+      qingkuai: 1.0.104
       source-map-js: 1.2.2
       vite: 8.3.2(@types/node@22.15.2)(sass-embedded@1.87.0)
 
